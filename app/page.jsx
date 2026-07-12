@@ -170,9 +170,18 @@ export default function Page() {
 
   // URL は「操作して撮る」取り込みモードを開く（一覧アイテムにはしない）
   const addUrl = useCallback(({ url }) => {
-    setUrlSession({ url, device: 'browser', orientation: 'portrait' });
+    // 前回使った撮影デバイスを引き継ぐ（毎回PCに戻って面倒、を回避）
+    let device = 'browser';
+    try { device = window.localStorage.getItem('mockup-studio.lastUrlDevice.v1') || 'browser'; } catch {}
+    const orientation = getFrame(device).canRotate ? 'portrait' : 'portrait';
+    setUrlSession({ url, device, orientation });
     setLastCapturedId(null);
   }, []);
+
+  // URL 撮影デバイスを記憶（次回の取り込みで既定にする）
+  useEffect(() => {
+    if (urlSession?.device) { try { window.localStorage.setItem('mockup-studio.lastUrlDevice.v1', urlSession.device); } catch {} }
+  }, [urlSession?.device]);
 
   const addFolder = useCallback(({ files, entry, device, orientation, renderOpts }) => {
     const item = {
