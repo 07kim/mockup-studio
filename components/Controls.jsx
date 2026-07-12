@@ -109,10 +109,12 @@ export default function Controls(props) {
 
           {/* 立体・傾き */}
           <Section id="tilt" title="立体・傾き" sum={tiltSum} collapsed={collapsed} toggle={toggle}>
+            <div className="scope-help" style={{ marginBottom: 8 }}>中央プレビューの「傾き」ボタンでドラッグでも回せます</div>
             <div className="seg full">
               <button className={!settings.rotX && !settings.rotY ? 'on' : ''} onClick={() => set({ rotX: 0, rotY: 0, thickness: 0 })}>平面</button>
               <button className={settings.rotY < 0 ? 'on' : ''} onClick={() => set({ rotY: -18, rotX: 6, thickness: 26 })}>左向き</button>
               <button className={settings.rotY > 0 ? 'on' : ''} onClick={() => set({ rotY: 18, rotX: 6, thickness: 26 })}>右向き</button>
+              <button className={settings.rotX >= 10 && settings.rotY < 0 ? 'on' : ''} onClick={() => set({ rotY: -20, rotX: 14, thickness: 24, perspTick: 28 })}>アイソメ</button>
             </div>
             <div style={{ marginTop: 8 }}>
               <Slider label="左右の回転" val={`${settings.rotY}°`} min={-45} max={45} value={settings.rotY} onChange={(v) => set({ rotY: v })} />

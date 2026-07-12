@@ -145,8 +145,17 @@ select,.mini-btn{font-size:12px;padding:5px 7px;border:1px solid var(--line);bor
 .dt-div{width:1px;height:20px;background:var(--line);margin:0 2px;flex:none}
 .dt-model{font-size:12px;padding:6px 7px;border:1px solid var(--line);border-radius:7px;background:var(--panel);color:var(--ink);max-width:160px;cursor:pointer}
 
-/* 中央プレビュー左下の背景ボタン＋ポップオーバー */
-.bgctl{position:absolute;left:14px;bottom:14px;z-index:6}
+/* プレビュー下部のフローティング操作クラスター */
+.pv-bl{position:absolute;left:14px;bottom:14px;z-index:6;display:flex;gap:8px;align-items:flex-end}
+.pv-br{position:absolute;right:14px;bottom:14px;z-index:6}
+.bgctl{position:relative}
+.fcc-dot{width:14px;height:14px;border-radius:4px;border:1px solid rgba(0,0,0,.15);flex:none}
+/* 傾きモード */
+.checker.tilt-on{cursor:grab;touch-action:none}
+.checker.tilt-on:active{cursor:grabbing}
+.tilt-hint{position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:6;
+  background:var(--accent-tint);color:var(--accent-ink);border:1px solid var(--accent-line);
+  border-radius:999px;padding:5px 12px;font-size:11.5px;font-weight:600;white-space:nowrap}
 .bgctl-btn{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--ink-2);
   background:rgba(255,255,255,.9);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
   border:1px solid var(--line);border-radius:9px;padding:7px 11px;box-shadow:0 4px 16px rgba(49,64,76,.12);cursor:pointer}
