@@ -53,6 +53,7 @@ export default function UrlStage(props) {
   const sidRef = useRef(null);
   const imgRef = useRef(null);
   const imeRef = useRef(null);        // IME/キー入力を受ける隠しinput
+  const uploadRef = useRef(null);     // ローカルのファイル選択用の隠しinput
   const composing = useRef(false);    // IME変換中フラグ
   const queue = useRef([]);
   const running = useRef(false);
@@ -215,6 +216,34 @@ export default function UrlStage(props) {
       .catch((e) => { setError(friendlyErr(e.message)); setLoading(false); });
   };
 
+  // サイト内の <input type=file> にローカルのファイルをアップロード。
+  const onPickFiles = () => uploadRef.current?.click();
+  const onFilesChosen = async (e) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = ''; // 同じファイルを続けて選べるようにリセット
+    if (!files.length || !sidRef.current) return;
+    setBusy(true);
+    try {
+      const buildForm = () => {
+        const fd = new FormData();
+        fd.append('id', sidRef.current);
+        for (const f of files) fd.append('files', f, f.name);
+        return fd;
+      };
+      let res = await fetch('/api/session', { method: 'POST', body: buildForm() });
+      let data = await res.json().catch(() => ({}));
+      if (res.status === 409 && data.code === 'SESSION_GONE') {
+        // セッションが切れていたら開き直して再送（同じ画面に戻る）。
+        if (await reopenSilently()) { res = await fetch('/api/session', { method: 'POST', body: buildForm() }); data = await res.json().catch(() => ({})); }
+      }
+      if (!res.ok) throw new Error(data.error || 'アップロードに失敗しました');
+      setShot(data.screenshot); setUrl(data.url);
+      pushToast?.({ kind: 'ok', message: `ファイルを${files.length}件アップロードしました` });
+    } catch (err) {
+      pushToast?.({ kind: 'err', message: friendlyErr(err.message) });
+    } finally { setBusy(false); }
+  };
+
   const capture = async () => {
     setBusy(true);
     try {
@@ -262,8 +291,12 @@ export default function UrlStage(props) {
             onChange={(e) => onSessionChange({ ...session, vw: vp.w, vh: +e.target.value || vp.h })} aria-label="高さ(px)" />
           {customSize && <button className="url-size-reset" title="デバイスの既定サイズに戻す" onClick={() => onSessionChange({ ...session, vw: null, vh: null })}>↺</button>}
         </span>
+        {interactive !== false && (
+          <button className="btn sm" onClick={onPickFiles} disabled={loading || !!error} title="サイトの入力欄にファイルをアップロード">📎 ファイル</button>
+        )}
         <button className="cap" onClick={capture} disabled={loading || !!error}>＋ この画面を追加{count > 0 ? `（${count}）` : ''}</button>
         <button className="btn sm" onClick={onClose}>完了</button>
+        <input ref={uploadRef} type="file" multiple style={{ display: 'none' }} onChange={onFilesChosen} aria-hidden="true" />
       </div>
 
       <div className="url-body">
@@ -296,7 +329,7 @@ export default function UrlStage(props) {
       <div className="embed-note">
         {interactive === false
           ? 'この環境では「URLを開いて撮影」のみ利用できます（画面内のクリック・入力はできません）。クリックしながら操作したい場合はローカル版（npm run dev）をご利用ください。'
-          : '画面の中をクリック・入力・スクロールできます。日本語入力（IME）や Cmd/Ctrl+A（全選択）・コピー＆ペーストも使えます。入力やボタンで見た目が変わった状態も「＋ この画面を追加」で撮影できます（URLが変わらなくてもOK）。'}
+          : '画面の中をクリック・入力・スクロールできます。日本語入力（IME）や Cmd/Ctrl+A（全選択）・コピー＆ペーストも使えます。ファイルのアップロードは上の「📎 ファイル」から行えます。入力やボタンで見た目が変わった状態も「＋ この画面を追加」で撮影できます（URLが変わらなくてもOK）。'}
       </div>
     </>
   );

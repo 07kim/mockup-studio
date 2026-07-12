@@ -4,7 +4,7 @@
 // ============================================================================
 
 import { NextResponse } from 'next/server';
-import { openSession, actSession, resizeSession, shotSession, closeSession, captureOnce, capabilities } from '@/lib/session.js';
+import { openSession, actSession, resizeSession, shotSession, closeSession, captureOnce, capabilities, uploadSession } from '@/lib/session.js';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -16,6 +16,20 @@ export function GET() {
 
 export async function POST(req) {
   try {
+    // ファイルアップロードは multipart（ファイル同梱）で受ける。
+    const ct = req.headers.get('content-type') || '';
+    if (ct.includes('multipart/form-data')) {
+      const form = await req.formData();
+      const id = form.get('id');
+      const raw = form.getAll('files');
+      const files = [];
+      for (const f of raw) {
+        if (!f || typeof f.arrayBuffer !== 'function') continue;
+        files.push({ name: f.name, mimeType: f.type || 'application/octet-stream', buffer: Buffer.from(await f.arrayBuffer()) });
+      }
+      return NextResponse.json(await uploadSession({ id, files }));
+    }
+
     const body = await req.json();
     switch (body.action) {
       case 'open': return NextResponse.json(await openSession(body));
