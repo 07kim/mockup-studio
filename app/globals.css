@@ -313,7 +313,16 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
 kbd{background:var(--panel-2);border:1px solid var(--line);border-radius:4px;padding:1px 6px;font-family:var(--mono);font-size:11.5px}
 .panel-box button:not(.sw):not(.chk):not(.link):not(.chip){border:1px solid var(--line);border-radius:var(--r-sm);background:var(--panel);font-size:12.5px;padding:7px 11px;font-weight:600}
 .panel-box button:not(.sw):not(.chk):not(.link):not(.chip):hover:not(:disabled){background:var(--sel)}
-.panel-box button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+/* ダイアログ内の segmented（対象/形式/解像度…）は連結ボタンのまま。上の汎用ルール
+   （:not 連鎖で specificity が高い）に負けて選択状態が見えなくなるのを打ち消す。 */
+.panel-box .seg button:not(.sw):not(.chk):not(.link):not(.chip){border:none;border-right:1px solid var(--line);border-radius:0;padding:7px 12px;font-weight:500}
+.panel-box .seg button:not(.sw):not(.chk):not(.link):not(.chip):last-child{border-right:none}
+.panel-box .seg button.on:not(.sw):not(.chk):not(.link):not(.chip){background:var(--accent-tint);color:var(--accent-ink);font-weight:600}
+/* primary は汎用ルール（:not 連鎖で specificity 高）に負けて白背景＝白文字で見えなくなるため、
+   同等の specificity で確実にアクセント色にする。 */
+.panel-box button.primary,
+.panel-box button.primary:not(.sw):not(.chk):not(.link):not(.chip){background:var(--accent);color:#fff;border-color:var(--accent)}
+.panel-box button.primary:not(.sw):not(.chk):not(.link):not(.chip):hover:not(:disabled){background:var(--accent);filter:brightness(1.05)}
 .panel-box button.danger{color:var(--danger)}
 .panel-box canvas{max-width:100%}
 

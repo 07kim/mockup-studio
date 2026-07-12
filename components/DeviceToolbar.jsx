@@ -16,6 +16,18 @@ const ICON_PORTRAIT = (<svg viewBox="0 0 24 24" {...S}><rect x="7" y="3" width="
 const ICON_LANDSCAPE = (<svg viewBox="0 0 24 24" {...S}><rect x="3" y="7" width="18" height="10" rx="2.5" /></svg>);
 const ICON_NOTCH = (<svg viewBox="0 0 24 24" {...S}><rect x="6" y="2.5" width="12" height="19" rx="3" /><rect x="9.5" y="4.6" width="5" height="1.8" rx=".9" fill="currentColor" stroke="none" /></svg>);
 
+// 写真の入れ方（フレーム内の画像の収め方 / フレーム自体を画像に合わせる）
+const FIT_OPTS = [
+  { v: 'cover', label: 'ぴったり（画面いっぱい・端は切れる）', assetHide: false,
+    icon: (<svg viewBox="0 0 24 24" {...S}><rect x="6" y="2" width="12" height="20" rx="1.5" fill="currentColor" stroke="none" opacity=".85" /><rect x="4" y="4" width="16" height="16" rx="2.5" /></svg>) },
+  { v: 'contain', label: '全体を表示（余白ができる）', assetHide: false,
+    icon: (<svg viewBox="0 0 24 24" {...S}><rect x="7" y="8" width="10" height="8" rx="1" fill="currentColor" stroke="none" opacity=".85" /><rect x="4" y="4" width="16" height="16" rx="2.5" /></svg>) },
+  { v: 'stretch', label: '引き伸ばす（比率が変わる）', assetHide: false,
+    icon: (<svg viewBox="0 0 24 24" {...S}><rect x="6" y="6" width="12" height="12" rx="1" fill="currentColor" stroke="none" opacity=".85" /><rect x="4" y="4" width="16" height="16" rx="2.5" /><path d="M1.5 12h2M20.5 12h2" /></svg>) },
+  { v: 'frame', label: '写真の形に（フレームを画像の比率に合わせる）', assetHide: true,
+    icon: (<svg viewBox="0 0 24 24" {...S}><rect x="6" y="3" width="12" height="18" rx="2.5" strokeDasharray="3 2" /><rect x="8.5" y="6" width="7" height="12" rx="1" fill="currentColor" stroke="none" opacity=".85" /></svg>) },
+];
+
 /**
  * 中央プレビュー上に浮かぶデバイス操作ツールバー（Blender風）。
  * 大分類アイコン → 機種 → 向き → ノッチ を、右メニューに行かず即座に切り替えられる。
@@ -74,6 +86,18 @@ export default function DeviceToolbar({ item, settings, onSetDevice, onSetOrient
           </button>
         </>
       )}
+
+      {/* 写真の入れ方（「写真の形に」＝フレームを画像の比率に合わせる、も含む） */}
+      <span className="dt-div" />
+      <div className="dt-group" aria-label="写真の入れ方">
+        {FIT_OPTS.filter((f) => !(f.assetHide && frame.kind === 'asset')).map((f) => (
+          <button key={f.v} type="button" className={`dt-ico${(settings.fit || 'cover') === f.v ? ' on' : ''}`}
+            title={f.label} aria-label={f.label} aria-pressed={(settings.fit || 'cover') === f.v}
+            onClick={() => onChange({ fit: f.v })}>
+            {f.icon}
+          </button>
+        ))}
+      </div>
 
       {/* 右側の余白にフレームの色（プログラム型フレームのみ） */}
       {showColor && (
