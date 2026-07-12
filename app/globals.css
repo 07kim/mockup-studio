@@ -208,6 +208,8 @@ select,.mini-btn{font-size:12px;padding:5px 7px;border:1px solid var(--line);bor
 .sess-wrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;outline:none}
 .sess-img{max-width:100%;max-height:100%;background:#fff;box-shadow:0 2px 12px rgba(49,64,76,.14);cursor:pointer;display:block}
 .sess-busy{position:absolute;top:12px;right:12px;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:6px;box-shadow:0 2px 8px rgba(49,64,76,.15)}
+/* IME・キー入力を受ける隠しinput（クリックは画像へ通す。IME候補が中央付近に出るよう配置） */
+.sess-ime{position:absolute;left:50%;top:50%;width:1px;height:1px;opacity:0;border:0;padding:0;margin:0;background:transparent;pointer-events:none;caret-color:transparent}
 .url-thumb{position:absolute;right:14px;bottom:14px;width:150px;background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 20px rgba(49,64,76,.16);overflow:hidden;z-index:5}
 .url-thumb-cap{font-size:10.5px;color:var(--ink-2);padding:4px 8px;border-bottom:1px solid var(--line-2)}
 .url-thumb-body{height:150px;display:flex;align-items:center;justify-content:center;padding:8px;background:var(--panel-2)}
