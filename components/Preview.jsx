@@ -4,8 +4,6 @@ import { useState, useRef } from 'react';
 import ItemCanvas from './ItemCanvas.jsx';
 import RenderingIndicator from './RenderingIndicator.jsx';
 import BgControl from './BgControl.jsx';
-import FrameColorControl from './FrameColorControl.jsx';
-import { getFrame } from '@/lib/devices.js';
 
 const PREVIEW_RS = 0.9;
 const PREVIEW_N = 14;
@@ -27,8 +25,9 @@ export default function Preview({ item, settings, bgImg, version, warnCount, onA
     if (!tilt || !drag.current) return;
     const dx = e.clientX - drag.current.x;
     const dy = e.clientY - drag.current.y;
-    // 横ドラッグ=左右回転、縦ドラッグ=上下回転（ドラッグ方向に素直に追従）
-    pending.current = { rotY: clampDeg(drag.current.rotY + dx * 0.3), rotX: clampDeg(drag.current.rotX + dy * 0.3) };
+    // ドラッグした側の縁が奥へ倒れる自然な回転（左右と上下で挙動をそろえる）。
+    // 右へ=右辺が奥 / 下へ=下辺が奥。
+    pending.current = { rotY: clampDeg(drag.current.rotY + dx * 0.3), rotX: clampDeg(drag.current.rotX - dy * 0.3) };
     if (!raf.current) raf.current = requestAnimationFrame(() => { raf.current = 0; if (pending.current) onChange(pending.current); });
   };
   const endDrag = () => { drag.current = null; };
@@ -51,9 +50,6 @@ export default function Preview({ item, settings, bgImg, version, warnCount, onA
   if (item.loading) return <div className="stage-body"><RenderingIndicator estimate={6} /></div>;
   if (item.error) return <div className="stage-body"><div className="stage-empty"><p style={{ color: 'var(--danger)' }}>失敗: {item.error}</p><p>カードの「再描画」で再試行できます。</p></div></div>;
 
-  const frame = getFrame(item.device);
-  const showFrameColor = frame?.kind !== 'asset'; // 写実PNG枠は色が効かない
-
   return (
     <div className="stage-body">
       <div className={`checker${tilt ? ' tilt-on' : ''}`}
@@ -61,10 +57,9 @@ export default function Preview({ item, settings, bgImg, version, warnCount, onA
         <ItemCanvas item={item} settings={settings} bgImg={bgImg} rs={PREVIEW_RS} N={PREVIEW_N} version={version} />
       </div>
 
-      {/* 左下: 背景 / 枠色 */}
+      {/* 左下: 背景（枠色は上部のデバイスツールバーへ） */}
       <div className="pv-bl">
         <BgControl settings={settings} onChange={onChange} onSetBg={onSetBg} />
-        {showFrameColor && <FrameColorControl settings={settings} onChange={onChange} />}
       </div>
 
       {/* 右下: 傾きモード（ドラッグで自由に回転） */}

@@ -1,6 +1,7 @@
 'use client';
 
 import { groupNames, framesInGroup, groupOf, defaultDeviceForGroup, getFrame } from '@/lib/devices.js';
+import { COLOR_PRESETS } from '@/lib/defaults.js';
 
 // 大分類ごとのアイコン（線画・20x20 viewBox）。中央プレビュー上の即時切替用。
 const S = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.6, strokeLinecap: 'round', strokeLinejoin: 'round' };
@@ -28,6 +29,7 @@ export default function DeviceToolbar({ item, settings, onSetDevice, onSetOrient
   const hasNotch = !!frame.asset?.overlayImageUrl;
   const land = item.orientation === 'landscape';
   const notchOn = !settings.hideNotch;
+  const showColor = frame.kind !== 'asset'; // 写実PNG枠は色が効かない
 
   // 画面上部の固定バー（1段・左寄せ）。左寄せなので機種等が増えても
   // 種類アイコンの位置は動かず、高さも常に一定。
@@ -71,6 +73,21 @@ export default function DeviceToolbar({ item, settings, onSetDevice, onSetOrient
             {ICON_NOTCH}
           </button>
         </>
+      )}
+
+      {/* 右側の余白にフレームの色（プログラム型フレームのみ） */}
+      {showColor && (
+        <div className="dt-colors" aria-label="フレームの色" title="フレームの色">
+          {COLOR_PRESETS.map((p) => (
+            <button key={p.color} type="button" className={`dt-sw${settings.frameColor === p.color ? ' on' : ''}`}
+              style={{ background: p.color }} title={p.name} aria-label={p.name} aria-pressed={settings.frameColor === p.color}
+              onClick={() => onChange({ frameColor: p.color })} />
+          ))}
+          <label className="dt-sw dt-sw-custom" title="その他の色">
+            <span className="dt-sw-ring" style={{ background: settings.frameColor }} />
+            <input type="color" value={settings.frameColor} onChange={(e) => onChange({ frameColor: e.target.value })} aria-label="その他の色" />
+          </label>
+        </div>
       )}
     </div>
   );
