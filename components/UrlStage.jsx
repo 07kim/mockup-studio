@@ -49,6 +49,7 @@ export default function UrlStage(props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [count, setCount] = useState(0);
+  const [fileWanted, setFileWanted] = useState(false); // サイトがファイル選択を求めている
 
   const sidRef = useRef(null);
   const imgRef = useRef(null);
@@ -156,6 +157,7 @@ export default function UrlStage(props) {
       try {
         const r = await api('act', { id: sidRef.current, events });
         setShot(r.screenshot); setUrl(r.url); setAddr(r.url);
+        if (r.fileChooser) setFileWanted(true); // サイトがファイル選択を要求 → 「📎 ファイル」を促す
         scheduleRefresh(); // 遅れて反映される非同期の結果を自動で拾う
       } catch (e) {
         if (e.code === 'SESSION_GONE') {
@@ -254,7 +256,8 @@ export default function UrlStage(props) {
         if (await reopenSilently()) { res = await fetch('/api/session', { method: 'POST', body: buildForm() }); data = await res.json().catch(() => ({})); }
       }
       if (!res.ok) throw new Error(data.error || 'アップロードに失敗しました');
-      setShot(data.screenshot); setUrl(data.url);
+      setShot(data.screenshot); setUrl(data.url); setFileWanted(false);
+      scheduleRefresh(); // アップロード後のプレビュー・自動送信の反映を拾う
       pushToast?.({ kind: 'ok', message: `ファイルを${files.length}件アップロードしました` });
     } catch (err) {
       pushToast?.({ kind: 'err', message: friendlyErr(err.message) });
@@ -310,12 +313,21 @@ export default function UrlStage(props) {
           {customSize && <button className="url-size-reset" title="デバイスの既定サイズに戻す" onClick={() => onSessionChange({ ...session, vw: null, vh: null })}>↺</button>}
         </span>
         {interactive !== false && (
-          <button className="btn sm" onClick={onPickFiles} disabled={loading || !!error} title="サイトの入力欄にファイルをアップロード">📎 ファイル</button>
+          <button className={`btn sm${fileWanted ? ' file-want' : ''}`} onClick={onPickFiles} disabled={loading || !!error} title="サイトの入力欄にファイルをアップロード">📎 ファイル</button>
         )}
         <button className="cap" onClick={capture} disabled={loading || !!error}>＋ この画面を追加{count > 0 ? `（${count}）` : ''}</button>
         <button className="btn sm" onClick={onClose}>完了</button>
-        <input ref={uploadRef} type="file" multiple style={{ display: 'none' }} onChange={onFilesChosen} aria-hidden="true" />
+        {/* 隠しファイル入力。display:none だと Safari 等でダイアログが開かないため、画面外に配置して描画は残す。 */}
+        <input ref={uploadRef} type="file" multiple onChange={onFilesChosen} aria-hidden="true" tabIndex={-1}
+          style={{ position: 'fixed', left: -9999, top: 0, width: 1, height: 1, opacity: 0, pointerEvents: 'none' }} />
       </div>
+
+      {fileWanted && (
+        <div className="file-banner">
+          このサイトがファイルの選択を求めています。
+          <button className="btn sm" onClick={onPickFiles}>📎 ファイルを選ぶ</button>
+        </div>
+      )}
 
       <div className="url-body">
         <div className={`sess-wrap${interactive ? ' live' : ''}`} tabIndex={0}
