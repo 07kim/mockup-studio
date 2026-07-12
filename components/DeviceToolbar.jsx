@@ -29,53 +29,48 @@ export default function DeviceToolbar({ item, settings, onSetDevice, onSetOrient
   const land = item.orientation === 'landscape';
   const notchOn = !settings.hideNotch;
 
-  // 下段（機種・向き・ノッチ）を出すかどうか。デバイスによって出入りするが、
-  // 上段の種類アイコンは常に同じ位置に固定される（下段は別行なので上段を動かさない）。
-  const hasCtx = models.length > 1 || frame.canRotate || hasNotch;
-
+  // 画面上部の固定バー（1段・左寄せ）。左寄せなので機種等が増えても
+  // 種類アイコンの位置は動かず、高さも常に一定。
   return (
     <div className="dtoolbar" role="toolbar" aria-label="デバイス">
-      {/* 上段: デバイスの種類（常に5個・位置固定） */}
-      <div className="dt-row">
-        <div className="dt-group" aria-label="デバイスの種類">
-          {cats.map((c) => (
-            <button key={c} type="button" className={`dt-ico${c === curCat ? ' on' : ''}`}
-              title={c} aria-label={c} aria-pressed={c === curCat}
-              onClick={() => onSetDevice(item.id, defaultDeviceForGroup(c))}>
-              {ICON[c] || <span style={{ fontSize: 11 }}>{c.slice(0, 2)}</span>}
-            </button>
-          ))}
-        </div>
+      <div className="dt-group" aria-label="デバイスの種類">
+        {cats.map((c) => (
+          <button key={c} type="button" className={`dt-ico${c === curCat ? ' on' : ''}`}
+            title={c} aria-label={c} aria-pressed={c === curCat}
+            onClick={() => onSetDevice(item.id, defaultDeviceForGroup(c))}>
+            {ICON[c] || <span style={{ fontSize: 11 }}>{c.slice(0, 2)}</span>}
+          </button>
+        ))}
       </div>
 
-      {/* 下段: 機種・向き・ノッチ（該当デバイスのみ） */}
-      {hasCtx && (
-        <div className="dt-row dt-ctx">
-          {models.length > 1 && (
-            <select className="dt-model" value={item.device} onChange={(e) => onSetDevice(item.id, e.target.value)} aria-label="機種">
-              {models.map((f) => <option key={f.id} value={f.id}>{f.label}</option>)}
-            </select>
-          )}
-          {frame.canRotate && (
-            <>
-              {models.length > 1 && <span className="dt-div" />}
-              <div className="dt-group" aria-label="向き">
-                <button type="button" className={`dt-ico${!land ? ' on' : ''}`} title="縦向き" aria-pressed={!land} onClick={() => onSetOrientation(item.id, 'portrait')}>{ICON_PORTRAIT}</button>
-                <button type="button" className={`dt-ico${land ? ' on' : ''}`} title="横向き" aria-pressed={land} onClick={() => onSetOrientation(item.id, 'landscape')}>{ICON_LANDSCAPE}</button>
-              </div>
-            </>
-          )}
-          {hasNotch && (
-            <>
-              {(models.length > 1 || frame.canRotate) && <span className="dt-div" />}
-              <button type="button" className={`dt-ico${notchOn ? ' on' : ''}`}
-                title={notchOn ? 'ノッチ・カメラを隠す' : 'ノッチ・カメラを表示'} aria-label="ノッチ・カメラ" aria-pressed={notchOn}
-                onClick={() => onChange({ hideNotch: notchOn })}>
-                {ICON_NOTCH}
-              </button>
-            </>
-          )}
-        </div>
+      {models.length > 1 && (
+        <>
+          <span className="dt-div" />
+          <select className="dt-model" value={item.device} onChange={(e) => onSetDevice(item.id, e.target.value)} aria-label="機種">
+            {models.map((f) => <option key={f.id} value={f.id}>{f.label}</option>)}
+          </select>
+        </>
+      )}
+
+      {frame.canRotate && (
+        <>
+          <span className="dt-div" />
+          <div className="dt-group" aria-label="向き">
+            <button type="button" className={`dt-ico${!land ? ' on' : ''}`} title="縦向き" aria-pressed={!land} onClick={() => onSetOrientation(item.id, 'portrait')}>{ICON_PORTRAIT}</button>
+            <button type="button" className={`dt-ico${land ? ' on' : ''}`} title="横向き" aria-pressed={land} onClick={() => onSetOrientation(item.id, 'landscape')}>{ICON_LANDSCAPE}</button>
+          </div>
+        </>
+      )}
+
+      {hasNotch && (
+        <>
+          <span className="dt-div" />
+          <button type="button" className={`dt-ico${notchOn ? ' on' : ''}`}
+            title={notchOn ? 'ノッチ・カメラを隠す' : 'ノッチ・カメラを表示'} aria-label="ノッチ・カメラ" aria-pressed={notchOn}
+            onClick={() => onChange({ hideNotch: notchOn })}>
+            {ICON_NOTCH}
+          </button>
+        </>
       )}
     </div>
   );

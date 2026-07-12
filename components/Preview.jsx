@@ -2,14 +2,13 @@
 
 import ItemCanvas from './ItemCanvas.jsx';
 import RenderingIndicator from './RenderingIndicator.jsx';
-import DeviceToolbar from './DeviceToolbar.jsx';
 import BgControl from './BgControl.jsx';
 
 const PREVIEW_RS = 0.9;
 const PREVIEW_N = 14;
 
 /** 中央フォーカスプレビュー（§4 / §7）。 */
-export default function Preview({ item, settings, bgImg, version, warnCount, onAddImage, onSetDevice, onSetOrientation, onChange, onSetBg }) {
+export default function Preview({ item, settings, bgImg, version, warnCount, onAddImage, onChange, onSetBg }) {
   if (!item) {
     return (
       <div className="stage-body">
@@ -34,8 +33,6 @@ export default function Preview({ item, settings, bgImg, version, warnCount, onA
 
   return (
     <div className="stage-body">
-      <DeviceToolbar item={item} settings={settings}
-        onSetDevice={onSetDevice} onSetOrientation={onSetOrientation} onChange={onChange} />
       <div className="checker">
         <ItemCanvas item={item} settings={settings} bgImg={bgImg} rs={PREVIEW_RS} N={PREVIEW_N} version={version} />
       </div>

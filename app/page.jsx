@@ -15,6 +15,7 @@ import SourceTabs from '@/components/SourceTabs.jsx';
 import ItemList from '@/components/ItemList.jsx';
 import Controls from '@/components/Controls.jsx';
 import Preview from '@/components/Preview.jsx';
+import DeviceToolbar from '@/components/DeviceToolbar.jsx';
 import Grid from '@/components/Grid.jsx';
 import ItemCanvas from '@/components/ItemCanvas.jsx';
 import RenderingIndicator from '@/components/RenderingIndicator.jsx';
@@ -355,6 +356,12 @@ export default function Page() {
             </div>
           )}
 
+          {/* 画面上部の固定デバイスバー（1つずつ表示・素材フォーカス時） */}
+          {!urlSession && view !== 'grid' && focusedItem && (
+            <DeviceToolbar item={focusedItem} settings={effSettings(focusedItem)}
+              onSetDevice={setItemDevice} onSetOrientation={setItemOrientation} onChange={applySetting} />
+          )}
+
           {urlSession ? (
             <UrlStage
               session={urlSession} onSessionChange={setUrlSession}
@@ -368,8 +375,7 @@ export default function Page() {
               onCardClick={onCardClick} onToggleSelect={toggleSelect} />
           ) : (
             <Preview item={focusedItem} settings={focusedItem ? effSettings(focusedItem) : settings} bgImg={ui.bgImg} version={framesVersion} warnCount={focusWarnCount} onAddImage={() => imgPickRef.current?.click()}
-              onSetDevice={setItemDevice} onSetOrientation={setItemOrientation} onChange={applySetting}
-              onSetBg={(img) => dispatch({ type: 'SET_BG', img })} />
+              onChange={applySetting} onSetBg={(img) => dispatch({ type: 'SET_BG', img })} />
           )}
         </div>
 
