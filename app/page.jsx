@@ -78,6 +78,11 @@ export default function Page() {
   const itemsRef = useRef(ui.items);
   const imgPickRef = useRef(null); // 中央ヒーローCTA用の共有ファイル入力
   useEffect(() => { itemsRef.current = ui.items; }, [ui.items]);
+  // 複数選択に対する一括操作用（コールバックから常に最新の選択を参照）
+  const selectedIdsRef = useRef(ui.selectedIds);
+  useEffect(() => { selectedIdsRef.current = ui.selectedIds; }, [ui.selectedIds]);
+  // 変更対象: 複数選択中でその中に id が含まれるなら選択全体、そうでなければ id 単体
+  const targetsFor = (id) => { const s = selectedIdsRef.current; return (s.has(id) && s.size > 1) ? [...s] : [id]; };
 
   useEffect(() => { setSettings(loadSettings()); }, []);
   useEffect(() => { saveSettings(settings); }, [settings]);
@@ -100,8 +105,11 @@ export default function Page() {
   // 素材が無い/未選択のときはベース設定を更新。
   const applySetting = useCallback((patch) => {
     if (ui.focusedId == null) { setSettings((s) => ({ ...s, ...patch })); return; }
-    setOverrides((ov) => ({ ...ov, [ui.focusedId]: { ...(ov[ui.focusedId] || {}), ...patch } }));
-  }, [ui.focusedId]);
+    // 複数選択中はフォーカス素材＋選択全体へまとめて反映（左で選んだ全要素が一括で変わる）
+    const sel = ui.selectedIds;
+    const ids = (sel.has(ui.focusedId) && sel.size > 1) ? [...sel] : [ui.focusedId];
+    setOverrides((ov) => { const n = { ...ov }; for (const id of ids) n[id] = { ...(n[id] || {}), ...patch }; return n; });
+  }, [ui.focusedId, ui.selectedIds]);
 
   // 「全てに反映」= フォーカス中の設定を全 item へ（ベース化＋override 消去）
   const applyToAll = useCallback(() => {
@@ -251,8 +259,22 @@ export default function Page() {
   const fixAllDevice = useCallback((patch) => { snapshot(); for (const it of ui.items) { dispatch({ type: 'UPDATE_ITEM', id: it.id, patch }); if (it.kind === 'html') runRender({ ...it, ...patch }); } pushToast({ kind: 'ok', message: '端末をそろえました', action: { label: '元に戻す', run: undo } }); }, [ui.items, snapshot, undo, pushToast, runRender]);
 
   const renameItem = useCallback((id, name) => dispatch({ type: 'UPDATE_ITEM', id, patch: { name } }), []);
-  const setItemDevice = useCallback((id, device) => { const it = itemsRef.current.find((x) => x.id === id); const patch = { device }; if (!getFrame(device).canRotate) patch.orientation = 'portrait'; dispatch({ type: 'UPDATE_ITEM', id, patch }); if (it && it.kind === 'html') runRender({ ...it, ...patch }); }, [runRender]);
-  const setItemOrientation = useCallback((id, orientation) => { const it = itemsRef.current.find((x) => x.id === id); dispatch({ type: 'UPDATE_ITEM', id, patch: { orientation } }); if (it && it.kind === 'html') runRender({ ...it, orientation }); }, [runRender]);
+  const setItemDevice = useCallback((id, device) => {
+    const patch = { device }; if (!getFrame(device).canRotate) patch.orientation = 'portrait';
+    for (const tid of targetsFor(id)) { // 複数選択中なら選択全体のフレームを一括変更
+      const it = itemsRef.current.find((x) => x.id === tid);
+      dispatch({ type: 'UPDATE_ITEM', id: tid, patch });
+      if (it && it.kind === 'html') runRender({ ...it, ...patch });
+    }
+  }, [runRender]);
+  const setItemOrientation = useCallback((id, orientation) => {
+    for (const tid of targetsFor(id)) {
+      const it = itemsRef.current.find((x) => x.id === tid);
+      if (it && !getFrame(it.device).canRotate) continue; // 回転できないフレームはスキップ
+      dispatch({ type: 'UPDATE_ITEM', id: tid, patch: { orientation } });
+      if (it && it.kind === 'html') runRender({ ...it, orientation });
+    }
+  }, [runRender]);
 
   // ---- 書き出し ----
   const doExport = useCallback(async (items) => {

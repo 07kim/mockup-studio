@@ -58,10 +58,14 @@ export default function Controls(props) {
         <>
           {/* 編集対象 */}
           <div className="section scope-sec">
-            <p className="label" style={{ marginBottom: totalCount > 1 ? 4 : 0 }}>「{focusedItem?.name || '素材'}」を調整中</p>
+            <p className="label" style={{ marginBottom: totalCount > 1 ? 4 : 0 }}>
+              {selCount > 1 ? `${selCount}件を調整中` : `「${focusedItem?.name || '素材'}」を調整中`}
+            </p>
             {totalCount > 1 && (
               <>
-                <div className="scope-help" style={{ marginBottom: 8 }}>変更はこの素材だけに反映されます</div>
+                <div className="scope-help" style={{ marginBottom: 8 }}>
+                  {selCount > 1 ? `変更・フレームの切替は選択中の${selCount}件にまとめて反映されます` : '変更はこの素材だけに反映されます（左でチェックすると複数まとめて変更）'}
+                </div>
                 <div className="row tight">
                   <button className="btn sm" style={{ flex: 1 }} disabled={!focusedItem} onClick={onApplyAll}>全てに同じ設定</button>
                   {selCount > 1 && <button className="btn sm" style={{ flex: 1 }} onClick={onApplySelected}>選択に同じ設定 ({selCount})</button>}
