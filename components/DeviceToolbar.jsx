@@ -42,6 +42,8 @@ export default function DeviceToolbar({ item, settings, onSetDevice, onSetOrient
   const land = item.orientation === 'landscape';
   const notchOn = !settings.hideNotch;
   const showColor = frame.kind !== 'asset'; // 写実PNG枠は色が効かない
+  // 「写真の形に」はフレーム変形なので slab枠のみ有効（ブラウザ/モニター/ノートPC/写実枠では隠す）
+  const supportsFrameFit = frame.kind !== 'asset' && (frame.spec?.draw || 'slab') === 'slab';
 
   // 画面上部の固定バー（1段・左寄せ）。左寄せなので機種等が増えても
   // 種類アイコンの位置は動かず、高さも常に一定。
@@ -90,7 +92,7 @@ export default function DeviceToolbar({ item, settings, onSetDevice, onSetOrient
       {/* 写真の入れ方（「写真の形に」＝フレームを画像の比率に合わせる、も含む） */}
       <span className="dt-div" />
       <div className="dt-group" aria-label="写真の入れ方">
-        {FIT_OPTS.filter((f) => !(f.assetHide && frame.kind === 'asset')).map((f) => (
+        {FIT_OPTS.filter((f) => f.v !== 'frame' || supportsFrameFit).map((f) => (
           <button key={f.v} type="button" className={`dt-ico${(settings.fit || 'cover') === f.v ? ' on' : ''}`}
             title={f.label} aria-label={f.label} aria-pressed={(settings.fit || 'cover') === f.v}
             onClick={() => onChange({ fit: f.v })}>
