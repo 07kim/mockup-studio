@@ -4,7 +4,7 @@
 // ============================================================================
 
 import { NextResponse } from 'next/server';
-import { openSession, actSession, resizeSession, shotSession, closeSession, captureOnce, capabilities, uploadSession } from '@/lib/session.js';
+import { openSession, actSession, resizeSession, refreshSession, shotSession, closeSession, captureOnce, capabilities, uploadSession } from '@/lib/session.js';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -35,6 +35,7 @@ export async function POST(req) {
       case 'open': return NextResponse.json(await openSession(body));
       case 'act': return NextResponse.json(await actSession(body));
       case 'resize': return NextResponse.json(await resizeSession(body));
+      case 'refresh': return NextResponse.json(await refreshSession(body));
       case 'shot': return NextResponse.json(await shotSession(body));
       case 'capture': return NextResponse.json(await captureOnce(body)); // 一発撮影（サーバーレス対応）
       case 'close': await closeSession(body.id); return NextResponse.json({ ok: true });

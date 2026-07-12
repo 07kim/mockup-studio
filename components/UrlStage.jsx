@@ -58,6 +58,7 @@ export default function UrlStage(props) {
   const queue = useRef([]);
   const running = useRef(false);
   const wheelAccum = useRef({ dy: 0, t: null });
+  const refreshTimers = useRef([]);
   // pump など固定コールバックから最新の url / vp を参照するための ref。
   const vpRef = useRef(vp); vpRef.current = vp;
   const urlRef = useRef(url); urlRef.current = url;
@@ -131,6 +132,21 @@ export default function UrlStage(props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [interactive, session.vw, session.vh]);
 
+  // 現在の画面だけ撮り直す（遅れて反映される非同期UIの追従用）。
+  const refreshNow = useCallback(async () => {
+    if (!sidRef.current) return;
+    try { const r = await api('refresh', { id: sidRef.current }); setShot(r.screenshot); setUrl(r.url); setAddr(r.url); }
+    catch (e) { if (e.code === 'SESSION_GONE') await reopenSilently(); }
+  }, [reopenSilently]);
+
+  // 操作の少し後に数回、自動で撮り直す（「接続中…」→結果画面 のような遅延反映を拾う）。
+  const scheduleRefresh = useCallback(() => {
+    refreshTimers.current.forEach(clearTimeout);
+    refreshTimers.current = [600, 1400, 2600, 4200].map((ms) => setTimeout(refreshNow, ms));
+  }, [refreshNow]);
+
+  useEffect(() => () => { refreshTimers.current.forEach(clearTimeout); }, []);
+
   const pump = useCallback(async () => {
     if (running.current || !sidRef.current) return;
     running.current = true;
@@ -140,6 +156,7 @@ export default function UrlStage(props) {
       try {
         const r = await api('act', { id: sidRef.current, events });
         setShot(r.screenshot); setUrl(r.url); setAddr(r.url);
+        scheduleRefresh(); // 遅れて反映される非同期の結果を自動で拾う
       } catch (e) {
         if (e.code === 'SESSION_GONE') {
           // セッションが切れていたら黙って開き直す。今回の操作は破棄（座標が古いため）。
@@ -152,7 +169,7 @@ export default function UrlStage(props) {
       }
     }
     running.current = false; setBusy(false);
-  }, [reopenSilently]);
+  }, [reopenSilently, scheduleRefresh]);
 
   const enqueue = useCallback((...events) => { queue.current.push(...events); pump(); }, [pump]);
 
@@ -273,7 +290,8 @@ export default function UrlStage(props) {
           <div className="seg">
             <button onClick={() => enqueue({ t: 'back' })} title="戻る">←</button>
             <button onClick={() => enqueue({ t: 'forward' })} title="進む">→</button>
-            <button onClick={() => enqueue({ t: 'reload' })} title="再読み込み">⟳</button>
+            <button onClick={refreshNow} title="表示を最新に更新（ページはそのまま）">🔄</button>
+            <button onClick={() => enqueue({ t: 'reload' })} title="ページを再読み込み">⟳</button>
           </div>
         )}
         <input className="addr-input" value={addr} placeholder="https://…" aria-label="アドレス"
