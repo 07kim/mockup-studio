@@ -26,7 +26,7 @@ export default function Grid({ items, focusedId, selectedIds, warnIds, settingsF
                 : it.img ? <ItemCanvas item={it} settings={settingsFor(it)} bgImg={bgImg} rs={0.4} N={10} version={version} />
                 : <span className="ph">{it.kind}</span>}
             </div>
-            <div className="gname">{it.name}{warnIds?.has(it.id) && <span className="warn-txt">警告</span>}</div>
+            <div className="gname">{it.name}{warnIds?.has(it.id) && <span className="warn-txt">他と違う端末</span>}</div>
             <div className="gsub">{frame.label}{orient ? ` · ${orient}` : ''}</div>
           </div>
         );

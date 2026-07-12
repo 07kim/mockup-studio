@@ -121,9 +121,9 @@ export default function Controls(props) {
           {/* 画面内の画像の位置・大きさ（フレームは固定・中の画像だけを動かす） */}
           <Section id="size" title="画面内の画像" sum={`${Math.round((settings.imgZoom ?? 1) * 100)}%`} collapsed={collapsed} toggle={toggle}>
             <div className="scope-help" style={{ marginBottom: 8 }}>フレームはそのままで、中の画像だけをズーム・移動します</div>
-            <Slider label="ズーム" val={`${Math.round((settings.imgZoom ?? 1) * 100)}%`} min={0.5} max={3} step={0.05} value={settings.imgZoom ?? 1} onChange={(v) => set({ imgZoom: v })} />
-            <Slider label="左右の位置" val={`${settings.imgX ?? 0}%`} min={-50} max={50} value={settings.imgX ?? 0} onChange={(v) => set({ imgX: v })} />
-            <Slider label="上下の位置" val={`${settings.imgY ?? 0}%`} min={-50} max={50} value={settings.imgY ?? 0} onChange={(v) => set({ imgY: v })} />
+            <Slider label="ズーム" val={`${Math.round((settings.imgZoom ?? 1) * 100)}%`} min={0.5} max={4} step={0.05} value={settings.imgZoom ?? 1} onChange={(v) => set({ imgZoom: v })} />
+            <Slider label="左右の位置" val={`${settings.imgX ?? 0}%`} min={-300} max={300} value={settings.imgX ?? 0} onChange={(v) => set({ imgX: v })} />
+            <Slider label="上下の位置" val={`${settings.imgY ?? 0}%`} min={-300} max={300} value={settings.imgY ?? 0} onChange={(v) => set({ imgY: v })} />
             <button className="btn sm" style={{ width: '100%' }} onClick={() => set({ imgZoom: 1, imgX: 0, imgY: 0 })}>リセット</button>
           </Section>
 

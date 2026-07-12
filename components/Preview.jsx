@@ -10,7 +10,7 @@ const PREVIEW_N = 14;
 const clampDeg = (v) => Math.max(-60, Math.min(60, Math.round(v)));
 
 /** 中央フォーカスプレビュー（§4 / §7）。傾きモードではドラッグで自由に回転できる。 */
-export default function Preview({ item, settings, bgImg, version, warnCount, onAddImage, onChange, onSetBg }) {
+export default function Preview({ item, settings, bgImg, version, onAddImage, onChange, onSetBg }) {
   const [tilt, setTilt] = useState(false); // 傾きモード（ドラッグで回転）
   const drag = useRef(null);
   const raf = useRef(0);
@@ -76,7 +76,6 @@ export default function Preview({ item, settings, bgImg, version, warnCount, onA
 
       <div className="stage-tools">
         <span style={{ color: 'var(--ink)', fontWeight: 500, maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</span>
-        {warnCount > 0 && <span className="warn-txt">警告 {warnCount}件</span>}
       </div>
     </div>
   );

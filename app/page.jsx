@@ -6,7 +6,7 @@ import { detectDevice } from '@/lib/detect.js';
 import { importFiles, importClipboard } from '@/lib/import.js';
 import { exportItems, downloadBlob, nowTokens } from '@/lib/exporter.js';
 import { saveProject, loadProject } from '@/lib/project.js';
-import { batchMismatchWarnings, allSourceWarnings } from '@/lib/warnings.js';
+import { batchMismatchWarnings } from '@/lib/warnings.js';
 import { renderHtmlItem } from '@/lib/render-client.js';
 import { getFrame } from '@/lib/devices.js';
 import { loadAndRegister, loadBuiltinAssetFrames } from '@/lib/customFrames.js';
@@ -332,10 +332,10 @@ export default function Page() {
   }, [ui.items, ui.focusedId, ui.selectedIds, undo, selectAll, selectNone, exportSelected, rangeSelect, toggleSelect, deleteItems]);
 
   // ---- 警告 ----
+  // 低解像度・比率の警告は誤解を招きノイズになりやすいので表示しない。
+  // 「1件だけ違う端末」のバッチ警告だけ（一覧で分かりやすく・端末をそろえる操作つき）残す。
   const batchWarnings = useMemo(() => batchMismatchWarnings(ui.items, settings), [ui.items, settings]);
-  const sourceWarnings = useMemo(() => allSourceWarnings(ui.items, settings), [ui.items, settings]);
-  const warnIds = useMemo(() => new Set([...batchWarnings, ...sourceWarnings].map((w) => w.itemId)), [batchWarnings, sourceWarnings]);
-  const focusWarnCount = focusedItem ? (batchWarnings.concat(sourceWarnings).filter((w) => w.itemId === focusedItem.id).length) : 0;
+  const warnIds = useMemo(() => new Set(batchWarnings.map((w) => w.itemId)), [batchWarnings]);
 
   // URL 取り込み中の小プレビュー＝直近に追加した画面
   const previewItem = (lastCapturedId != null && ui.items.find((i) => i.id === lastCapturedId)) || null;
@@ -405,7 +405,7 @@ export default function Page() {
               settingsFor={effSettings} bgImg={ui.bgImg} version={framesVersion}
               onCardClick={onCardClick} onToggleSelect={toggleSelect} />
           ) : (
-            <Preview item={focusedItem} settings={focusedItem ? effSettings(focusedItem) : settings} bgImg={ui.bgImg} version={framesVersion} warnCount={focusWarnCount} onAddImage={() => imgPickRef.current?.click()}
+            <Preview item={focusedItem} settings={focusedItem ? effSettings(focusedItem) : settings} bgImg={ui.bgImg} version={framesVersion} onAddImage={() => imgPickRef.current?.click()}
               onChange={applySetting} onSetBg={(img) => dispatch({ type: 'SET_BG', img })} />
           )}
         </div>

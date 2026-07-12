@@ -289,34 +289,42 @@ export default function UrlStage(props) {
   return (
     <>
       <div className="urlbar">
-        {interactive !== false && (
-          <div className="seg">
-            <button onClick={() => enqueue({ t: 'back' })} title="戻る">←</button>
-            <button onClick={() => enqueue({ t: 'forward' })} title="進む">→</button>
-            <button onClick={refreshNow} title="表示を最新に更新（ページはそのまま）">🔄</button>
-            <button onClick={() => enqueue({ t: 'reload' })} title="ページを再読み込み">⟳</button>
-          </div>
-        )}
-        <input className="addr-input" value={addr} placeholder="https://…" aria-label="アドレス"
-          onChange={(e) => setAddr(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') go(); }} />
-        <button className="btn sm" onClick={go}>{interactive === false ? '撮影' : '移動'}</button>
-        <select value={session.device} onChange={(e) => onSessionChange({ ...session, device: e.target.value, vw: null, vh: null })} aria-label="デバイス" title="撮影するデバイス">
-          {groups.map((g) => <optgroup key={g.group} label={g.group}>{g.items.map((f) => <option key={f.id} value={f.id}>{f.label}</option>)}</optgroup>)}
-        </select>
-        {/* 撮影サイズ（普段は意識しなくてOK・必要なら変更）。デバイスを選ぶと既定に戻る。 */}
-        <span className={`url-size${customSize ? ' custom' : ''}`} title="撮影サイズ（幅×高 px）。通常はデバイスにおまかせ。変えたい時だけ入力">
-          <input type="number" min={200} max={4000} value={vp.w}
-            onChange={(e) => onSessionChange({ ...session, vw: +e.target.value || vp.w, vh: vp.h })} aria-label="幅(px)" />
-          <span className="x">×</span>
-          <input type="number" min={200} max={4000} value={vp.h}
-            onChange={(e) => onSessionChange({ ...session, vw: vp.w, vh: +e.target.value || vp.h })} aria-label="高さ(px)" />
-          {customSize && <button className="url-size-reset" title="デバイスの既定サイズに戻す" onClick={() => onSessionChange({ ...session, vw: null, vh: null })}>↺</button>}
-        </span>
-        {interactive !== false && (
-          <button className={`btn sm${fileWanted ? ' file-want' : ''}`} onClick={onPickFiles} disabled={loading || !!error} title="サイトの入力欄にファイルをアップロード">📎 ファイル</button>
-        )}
-        <button className="cap" onClick={capture} disabled={loading || !!error}>＋ この画面を追加{count > 0 ? `（${count}）` : ''}</button>
-        <button className="btn sm" onClick={onClose}>完了</button>
+        {/* 左〜中央は横に長くなったらスクロール。右のアクション（追加・完了）は常に見えるよう固定。 */}
+        <div className="urlbar-scroll">
+          {interactive !== false && (
+            <div className="seg">
+              <button onClick={() => enqueue({ t: 'back' })} title="戻る">←</button>
+              <button onClick={() => enqueue({ t: 'forward' })} title="進む">→</button>
+              <button onClick={refreshNow} title="表示を最新に更新（ページはそのまま）">🔄</button>
+              <button onClick={() => enqueue({ t: 'reload' })} title="ページを再読み込み">⟳</button>
+            </div>
+          )}
+          <input className="addr-input" value={addr} placeholder="https://…" aria-label="アドレス"
+            onChange={(e) => setAddr(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') go(); }} />
+          <button className="btn sm" onClick={go}>{interactive === false ? '撮影' : '移動'}</button>
+          <select value={session.device} onChange={(e) => onSessionChange({ ...session, device: e.target.value, vw: null, vh: null })} aria-label="デバイス" title="撮影するデバイス">
+            {groups.map((g) => <optgroup key={g.group} label={g.group}>{g.items.map((f) => <option key={f.id} value={f.id}>{f.label}</option>)}</optgroup>)}
+          </select>
+          {/* 撮影サイズ（普段は意識しなくてOK・必要なら変更）。デバイスを選ぶと既定に戻る。 */}
+          <span className={`url-size${customSize ? ' custom' : ''}`} title="撮影サイズ（幅×高 px）。通常はデバイスにおまかせ。変えたい時だけ入力">
+            <input type="number" min={200} max={4000} value={vp.w}
+              onChange={(e) => onSessionChange({ ...session, vw: +e.target.value || vp.w, vh: vp.h })} aria-label="幅(px)" />
+            <span className="x">×</span>
+            <input type="number" min={200} max={4000} value={vp.h}
+              onChange={(e) => onSessionChange({ ...session, vw: vp.w, vh: +e.target.value || vp.h })} aria-label="高さ(px)" />
+            {customSize && <button className="url-size-reset" title="デバイスの既定サイズに戻す" onClick={() => onSessionChange({ ...session, vw: null, vh: null })}>↺</button>}
+          </span>
+          {interactive !== false && (
+            <button className={`btn sm${fileWanted ? ' file-want' : ''}`} onClick={onPickFiles} disabled={loading || !!error} title="サイトの入力欄にファイルをアップロード">📎 ファイル</button>
+          )}
+        </div>
+
+        {/* 常に見える固定アクション */}
+        <div className="urlbar-actions">
+          <button className="cap" onClick={capture} disabled={loading || !!error}>＋ この画面を追加{count > 0 ? `（${count}）` : ''}</button>
+          <button className="btn done" onClick={onClose} title="URL操作を終了して戻る（追加した画像はそのまま残ります）">✓ 完了して戻る</button>
+        </div>
+
         {/* 隠しファイル入力。display:none だと Safari 等でダイアログが開かないため、画面外に配置して描画は残す。 */}
         <input ref={uploadRef} type="file" multiple onChange={onFilesChosen} aria-hidden="true" tabIndex={-1}
           style={{ position: 'fixed', left: -9999, top: 0, width: 1, height: 1, opacity: 0, pointerEvents: 'none' }} />
