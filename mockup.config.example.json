@@ -1,0 +1,21 @@
+{
+  "out": "out",
+  "style": {
+    "frameColor": "#15171c",
+    "fit": "cover",
+    "rotY": 18,
+    "thickness": 24,
+    "bgType": "gradient",
+    "gradA": "#4f46e5",
+    "gradB": "#ec4899",
+    "gradAngle": 45,
+    "shadow": true,
+    "scale": 2,
+    "format": "png"
+  },
+  "sources": [
+    { "image": "shots/home.png", "device": "iphone-island" },
+    { "url": "http://localhost:3000", "device": "browser", "renderOpts": { "waitMs": 500 } },
+    { "folder": "site", "entry": "index.html", "device": "browser" }
+  ]
+}
