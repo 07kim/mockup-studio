@@ -1,8 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { viewportFor } from '@/lib/render-client.js';
-import { framesByGroup } from '@/lib/devices.js';
+import { framesByGroup, captureViewportFor } from '@/lib/devices.js';
 import ItemCanvas from './ItemCanvas.jsx';
 import RenderingIndicator from './RenderingIndicator.jsx';
 
@@ -32,10 +31,12 @@ function friendlyErr(msg) {
  */
 export default function UrlStage(props) {
   const { session, onSessionChange, onCapture, onClose, previewItem, previewSettings, bgImg, version, pushToast } = props;
-  // 撮影サイズ = デバイスの既定ビューポート。session.vw/vh があればそれで上書き（任意）。
+  // 撮影ビューポート = デバイスの CSS 論理サイズ＋DPR（DevTools のデバイスモード相当）。
+  // これで幅が小さくなり、サイトがスマホUIで表示される。session.vw/vh があれば上書き（任意）。
+  const cap = captureViewportFor(session.device, session.orientation);
   const vp = (session.vw && session.vh)
-    ? { w: Math.round(session.vw), h: Math.round(session.vh) }
-    : viewportFor(session.device, session.orientation);
+    ? { w: Math.round(session.vw), h: Math.round(session.vh), dpr: cap.dpr, mobile: cap.mobile }
+    : cap;
   const groups = framesByGroup();
   const customSize = !!(session.vw && session.vh);
 
@@ -72,7 +73,7 @@ export default function UrlStage(props) {
     setLoading(true); setError(null); setShot(null); setCount(0);
 
     if (interactive) {
-      api('open', { url: session.url, width: vp.w, height: vp.h })
+      api('open', { url: session.url, width: vp.w, height: vp.h, dpr: vp.dpr, mobile: vp.mobile })
         .then((r) => { if (!alive) return; sidRef.current = r.id; setShot(r.screenshot); setUrl(r.url); setAddr(r.url); setLoading(false); })
         .catch((e) => { if (!alive) return; setError(friendlyErr(e.message)); setLoading(false); });
       return () => {
@@ -82,7 +83,7 @@ export default function UrlStage(props) {
       };
     }
     // 撮影のみモード
-    api('capture', { url: session.url, width: vp.w, height: vp.h })
+    api('capture', { url: session.url, width: vp.w, height: vp.h, dpr: vp.dpr, mobile: vp.mobile })
       .then((r) => { if (!alive) return; setShot(r.screenshot); setUrl(r.url); setAddr(r.url); setLoading(false); })
       .catch((e) => { if (!alive) return; setError(friendlyErr(e.message)); setLoading(false); });
     return () => { alive = false; };
@@ -158,7 +159,7 @@ export default function UrlStage(props) {
     if (interactive) { enqueue({ t: 'nav', url: u }); return; }
     // 撮影のみモード: 新しい URL を撮り直す
     setLoading(true); setError(null);
-    api('capture', { url: u, width: vp.w, height: vp.h })
+    api('capture', { url: u, width: vp.w, height: vp.h, dpr: vp.dpr, mobile: vp.mobile })
       .then((r) => { setShot(r.screenshot); setUrl(r.url); setAddr(r.url); setLoading(false); })
       .catch((e) => { setError(friendlyErr(e.message)); setLoading(false); });
   };
