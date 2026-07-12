@@ -7,8 +7,9 @@ import RenderingIndicator from './RenderingIndicator.jsx';
 
 async function api(action, body) {
   const res = await fetch('/api/session', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, ...body }) });
-  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'セッションエラー');
-  return res.json();
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) { const e = new Error(data.error || 'セッションエラー'); e.code = data.code; throw e; }
+  return data;
 }
 
 const KEYMAP = { Enter: 'Enter', Backspace: 'Backspace', Delete: 'Delete', Tab: 'Tab', Escape: 'Escape', ArrowUp: 'ArrowUp', ArrowDown: 'ArrowDown', ArrowLeft: 'ArrowLeft', ArrowRight: 'ArrowRight', Home: 'Home', End: 'End' };
@@ -56,6 +57,27 @@ export default function UrlStage(props) {
   const queue = useRef([]);
   const running = useRef(false);
   const wheelAccum = useRef({ dy: 0, t: null });
+  // pump など固定コールバックから最新の url / vp を参照するための ref。
+  const vpRef = useRef(vp); vpRef.current = vp;
+  const urlRef = useRef(url); urlRef.current = url;
+  const reopening = useRef(false);
+
+  // セッションが切れていたら黙って開き直す（ユーザーにエラーを見せない）。成功で true。
+  const reopenSilently = useCallback(async () => {
+    if (reopening.current) return false;
+    reopening.current = true;
+    try {
+      const v = vpRef.current;
+      const r = await api('open', { url: urlRef.current, width: v.w, height: v.h, dpr: v.dpr, mobile: v.mobile });
+      sidRef.current = r.id;
+      setShot(r.screenshot); setUrl(r.url); setAddr(r.url); setError(null);
+      return true;
+    } catch {
+      return false;
+    } finally {
+      reopening.current = false;
+    }
+  }, []);
 
   // 実行環境の能力を取得（ライブ操作が可能か）。
   useEffect(() => {
@@ -87,8 +109,26 @@ export default function UrlStage(props) {
       .then((r) => { if (!alive) return; setShot(r.screenshot); setUrl(r.url); setAddr(r.url); setLoading(false); })
       .catch((e) => { if (!alive) return; setError(friendlyErr(e.message)); setLoading(false); });
     return () => { alive = false; };
+    // URL・デバイス・環境が変わった時だけ開き直す（サイズ変更では開き直さない＝下の resize 効果が担当）。
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [interactive, session.url, session.device, vp.w, vp.h]);
+  }, [interactive, session.url, session.device]);
+
+  // 撮影サイズ（カスタム）の変更は開き直さず、setViewportSize でその場リサイズ（デバウンス）。
+  // これで「サイズ入力のたびに再オープン→すぐ切れる／数字が崩れる」を防ぐ。
+  useEffect(() => {
+    if (!interactive || !sidRef.current) return undefined;
+    if (!(session.vw && session.vh)) return undefined; // 既定サイズは open 側が担当
+    const t = setTimeout(async () => {
+      try {
+        const r = await api('resize', { id: sidRef.current, width: session.vw, height: session.vh });
+        setShot(r.screenshot); setUrl(r.url);
+      } catch (e) {
+        if (e.code === 'SESSION_GONE') await reopenSilently();
+      }
+    }, 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [interactive, session.vw, session.vh]);
 
   const pump = useCallback(async () => {
     if (running.current || !sidRef.current) return;
@@ -96,11 +136,22 @@ export default function UrlStage(props) {
     while (queue.current.length) {
       const events = queue.current.splice(0, queue.current.length);
       setBusy(true);
-      try { const r = await api('act', { id: sidRef.current, events }); setShot(r.screenshot); setUrl(r.url); setAddr(r.url); }
-      catch (e) { setError(e.message); }
+      try {
+        const r = await api('act', { id: sidRef.current, events });
+        setShot(r.screenshot); setUrl(r.url); setAddr(r.url);
+      } catch (e) {
+        if (e.code === 'SESSION_GONE') {
+          // セッションが切れていたら黙って開き直す。今回の操作は破棄（座標が古いため）。
+          queue.current = [];
+          const ok = await reopenSilently();
+          if (!ok) setError(friendlyErr(e.message));
+        } else {
+          setError(e.message);
+        }
+      }
     }
     running.current = false; setBusy(false);
-  }, []);
+  }, [reopenSilently]);
 
   const enqueue = useCallback((...events) => { queue.current.push(...events); pump(); }, [pump]);
 
@@ -168,13 +219,21 @@ export default function UrlStage(props) {
     setBusy(true);
     try {
       if (interactive && sidRef.current) {
-        const r = await api('shot', { id: sidRef.current });
+        let r;
+        try {
+          r = await api('shot', { id: sidRef.current });
+        } catch (e) {
+          if (e.code !== 'SESSION_GONE') throw e;
+          // セッションが切れていたら開き直してから撮影（エラーを見せない）。
+          if (!(await reopenSilently())) throw e;
+          r = await api('shot', { id: sidRef.current });
+        }
         onCapture(r.screenshot, r.url || url, session.device);
       } else if (shot) {
         onCapture(shot, url, session.device); // 撮影のみモードは表示中のPNGをそのまま追加
       }
       setCount((c) => c + 1);
-    } catch (e) { pushToast?.({ kind: 'err', message: `撮影失敗: ${e.message}` }); }
+    } catch (e) { pushToast?.({ kind: 'err', message: `撮影失敗: ${friendlyErr(e.message)}` }); }
     finally { setBusy(false); }
   };
 

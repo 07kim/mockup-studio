@@ -4,7 +4,7 @@
 // ============================================================================
 
 import { NextResponse } from 'next/server';
-import { openSession, actSession, shotSession, closeSession, captureOnce, capabilities } from '@/lib/session.js';
+import { openSession, actSession, resizeSession, shotSession, closeSession, captureOnce, capabilities } from '@/lib/session.js';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -20,12 +20,15 @@ export async function POST(req) {
     switch (body.action) {
       case 'open': return NextResponse.json(await openSession(body));
       case 'act': return NextResponse.json(await actSession(body));
+      case 'resize': return NextResponse.json(await resizeSession(body));
       case 'shot': return NextResponse.json(await shotSession(body));
       case 'capture': return NextResponse.json(await captureOnce(body)); // 一発撮影（サーバーレス対応）
       case 'close': await closeSession(body.id); return NextResponse.json({ ok: true });
       default: return NextResponse.json({ error: '不明な操作です' }, { status: 400 });
     }
   } catch (e) {
-    return NextResponse.json({ error: e?.message || 'セッションエラー' }, { status: 500 });
+    // SESSION_GONE はクライアントが自動で開き直せるよう 409＋code で返す。
+    const gone = e?.code === 'SESSION_GONE';
+    return NextResponse.json({ error: e?.message || 'セッションエラー', code: e?.code }, { status: gone ? 409 : 500 });
   }
 }
