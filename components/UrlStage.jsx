@@ -50,7 +50,11 @@ export default function UrlStage(props) {
   const [error, setError] = useState(null);
   const [count, setCount] = useState(0);
   const [fileWanted, setFileWanted] = useState(false); // サイトがファイル選択を求めている
+  const [kbActive, setKbActive] = useState(false); // 隠しinputにフォーカス中＝キーボード入力できる
+  const [clickFx, setClickFx] = useState(null); // クリック位置のフィードバック（波紋）{ x, y, k }
 
+  const kbActiveRef = useRef(false);
+  const clickFxTimer = useRef(0);
   const sidRef = useRef(null);
   const imgRef = useRef(null);
   const imeRef = useRef(null);        // IME/キー入力を受ける隠しinput
@@ -99,7 +103,7 @@ export default function UrlStage(props) {
 
     if (interactive) {
       api('open', { url: session.url, width: vp.w, height: vp.h, dpr: vp.dpr, mobile: vp.mobile })
-        .then((r) => { if (!alive) return; sidRef.current = r.id; setShot(r.screenshot); setUrl(r.url); setAddr(r.url); setLoading(false); })
+        .then((r) => { if (!alive) return; sidRef.current = r.id; setShot(r.screenshot); setUrl(r.url); setAddr(r.url); setLoading(false); setTimeout(() => imeRef.current?.focus(), 0); })
         .catch((e) => { if (!alive) return; setError(friendlyErr(e.message)); setLoading(false); });
       return () => {
         alive = false;
@@ -158,6 +162,7 @@ export default function UrlStage(props) {
         const r = await api('act', { id: sidRef.current, events });
         setShot(r.screenshot); setUrl(r.url); setAddr(r.url);
         if (r.fileChooser) setFileWanted(true); // サイトがファイル選択を要求 → 「📎 ファイル」を促す
+        if (kbActiveRef.current) imeRef.current?.focus(); // 再描画でフォーカスが外れても入力を維持
         scheduleRefresh(); // 遅れて反映される非同期の結果を自動で拾う
       } catch (e) {
         if (e.code === 'SESSION_GONE') {
@@ -177,11 +182,15 @@ export default function UrlStage(props) {
 
   const onImgClick = (e) => {
     if (!interactive) return;
-    const r = imgRef.current.getBoundingClientRect();
-    const x = ((e.clientX - r.left) / r.width) * vp.w;
-    const y = ((e.clientY - r.top) / r.height) * vp.h;
-    enqueue({ t: 'click', x, y });
+    const r = e.currentTarget.getBoundingClientRect(); // 透明オーバーレイ＝画像と同じ矩形
+    const px = (e.clientX - r.left) / r.width;   // 0..1
+    const py = (e.clientY - r.top) / r.height;   // 0..1
+    enqueue({ t: 'click', x: px * vp.w, y: py * vp.h });
     imeRef.current?.focus(); // クリック後はキーボード入力を受け取れるようにする
+    // クリックが効いたことが分かるよう波紋を表示（画像内の相対位置 %）。
+    clearTimeout(clickFxTimer.current);
+    setClickFx({ x: px * 100, y: py * 100, k: (clickFx?.k || 0) + 1 });
+    clickFxTimer.current = setTimeout(() => setClickFx(null), 500);
   };
 
   const onWheel = (e) => {
@@ -202,27 +211,23 @@ export default function UrlStage(props) {
     if (text) enqueue({ t: 'type', text }); // 確定した日本語などをまとめて入力
     if (imeRef.current) imeRef.current.value = '';
   };
-  const onBeforeInput = (e) => {
-    if (composing.current) return;               // IME中は compositionend で送る
-    if (e.inputType === 'insertText' && e.data) { // 通常文字（英数・記号）
-      e.preventDefault();
-      enqueue({ t: 'type', text: e.data });
-    }
-  };
   const onPaste = (e) => {
     const text = e.clipboardData?.getData('text');
     if (text) { e.preventDefault(); enqueue({ t: 'type', text }); } // ローカルのクリップボードを貼り付け
   };
   const onKeyDown = (e) => {
-    if (composing.current) return; // 変換中の Enter 等は無視（確定は compositionend が拾う）
+    if (composing.current) return; // 変換中（IME）はキー処理せず、確定を compositionend で拾う
     if (e.metaKey || e.ctrlKey) {
       const k = e.key.toLowerCase();
       if (COMBO_KEYS.has(k)) { e.preventDefault(); enqueue({ t: 'combo', key: k, ctrl: true, shift: e.shiftKey }); }
       return; // それ以外の Cmd/Ctrl 系はブラウザ既定に任せない（何もしない）
     }
-    if (KEYMAP[e.key]) { e.preventDefault(); enqueue({ t: 'key', key: KEYMAP[e.key] }); }
-    // 通常文字は beforeinput / compositionend が担当するのでここでは送らない
+    if (KEYMAP[e.key]) { e.preventDefault(); enqueue({ t: 'key', key: KEYMAP[e.key] }); return; }
+    // 通常の1文字（英数・記号）はここで確実に送る（beforeinput 依存はブラウザ差で不安定なため）。
+    if (e.key.length === 1) { e.preventDefault(); enqueue({ t: 'type', text: e.key }); }
   };
+  // 入力欄（隠しinput）にフォーカスを保つ。ライブ画面クリックや操作後に呼ぶ。
+  const focusKb = useCallback(() => { if (interactive) imeRef.current?.focus(); }, [interactive]);
 
   const go = () => {
     let u = addr.trim(); if (!u) return;
@@ -338,21 +343,32 @@ export default function UrlStage(props) {
       )}
 
       <div className="url-body">
-        <div className={`sess-wrap${interactive ? ' live' : ''}`} tabIndex={0}
-          onWheel={onWheel} onClick={() => imeRef.current?.focus()}>
+        <div className={`sess-wrap${interactive ? ' live' : ''}${kbActive ? ' kb' : ''}`} tabIndex={0}
+          onWheel={onWheel} onPointerDown={focusKb}>
           {loading ? <RenderingIndicator estimate={6} label="サイトを開いています" />
             : error ? <div className="stage-empty"><p style={{ color: 'var(--danger)' }}>{error}</p></div>
             : shot ? (
-              <img ref={imgRef} className="sess-img" src={shot} alt="操作中の画面" draggable={false}
-                style={{ aspectRatio: `${vp.w} / ${vp.h}` }} onClick={onImgClick} />
+              <div className="sess-frame">
+                <img ref={imgRef} className="sess-img" src={shot} alt="操作中の画面" draggable={false}
+                  style={{ aspectRatio: `${vp.w} / ${vp.h}` }} />
+                {/* 画面全体を覆う透明な入力欄。クリックで自動フォーカスされるので
+                    キーボード／日本語入力が確実に効き、クリック位置も取得できる。 */}
+                {interactive && (
+                  <input ref={imeRef} className="sess-capture" aria-label="画面を操作（クリックで入力可能）"
+                    onClick={onImgClick} onKeyDown={onKeyDown} onPaste={onPaste}
+                    onFocus={() => { kbActiveRef.current = true; setKbActive(true); }}
+                    onBlur={() => { kbActiveRef.current = false; setKbActive(false); }}
+                    onCompositionStart={onCompositionStart} onCompositionEnd={onCompositionEnd} />
+                )}
+                {clickFx && <span key={clickFx.k} className="click-fx" style={{ left: `${clickFx.x}%`, top: `${clickFx.y}%` }} />}
+              </div>
             ) : null}
-          {/* IME・キー入力を受ける隠しinput（interactive時のみ） */}
-          {interactive && (
-            <input ref={imeRef} className="sess-ime" aria-hidden="true" tabIndex={-1}
-              onKeyDown={onKeyDown} onBeforeInput={onBeforeInput} onPaste={onPaste}
-              onCompositionStart={onCompositionStart} onCompositionEnd={onCompositionEnd} />
+          {/* 状態表示: 操作を送信中／キーボード入力できる／クリックを促す */}
+          {interactive && !loading && !error && (
+            busy ? <div className="sess-status busy"><span className="spinner" style={{ width: 13, height: 13, borderWidth: 2 }} />送信中…</div>
+              : kbActive ? <div className="sess-status ok">⌨️ キーボードで入力できます</div>
+                : <div className="sess-status hint">画面をクリックすると操作できます</div>
           )}
-          {busy && !loading && <div className="sess-busy"><span className="spinner" style={{ width: 20, height: 20, borderWidth: 2 }} /></div>}
         </div>
 
         <div className="url-thumb">

@@ -56,17 +56,8 @@ export default function Controls(props) {
           </div>
         ) : (
         <>
-          {/* 編集対象（何を調整しているかの表示。反映先の一括適用はフッターへ分離） */}
-          <div className="section scope-sec">
-            <p className="label" style={{ marginBottom: totalCount > 1 ? 4 : 0 }}>
-              {selCount > 1 ? `${selCount}件を調整中` : `「${focusedItem?.name || '素材'}」を調整中`}
-            </p>
-            {totalCount > 1 && (
-              <div className="scope-help">
-                {selCount > 1 ? `変更は選択中の${selCount}件にまとめて反映されます` : '変更はこの素材だけに反映されます（左でチェックすると複数選択）'}
-              </div>
-            )}
-          </div>
+          {/* 「◯◯を調整中」の案内は邪魔なので撤去。編集対象は左の一覧のハイライトで分かる。
+              複数へまとめて反映はフッターの「今の設定を他にも反映」で行う。 */}
 
           {/* 機種・向き・ノッチは中央プレビュー上のツールバーで操作（右メニューには置かない） */}
 

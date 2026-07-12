@@ -222,15 +222,32 @@ select,.mini-btn{font-size:12px;padding:5px 7px;border:1px solid var(--line);bor
 /* URL 操作: 実撮影ビューポートで表示し縮小フィット（比率が一致）＋右下に小プレビュー */
 .url-body{flex:1;position:relative;min-height:0;background:var(--panel-2)}
 .sess-wrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;outline:none}
+.sess-frame{position:relative;display:inline-flex;max-width:100%;max-height:100%;border-radius:2px;transition:box-shadow .15s}
+.sess-wrap.kb .sess-frame{box-shadow:0 0 0 2px var(--accent),0 2px 12px rgba(49,64,76,.14)} /* キーボード入力中の枠 */
 .sess-img{max-width:100%;max-height:100%;background:#fff;box-shadow:0 2px 12px rgba(49,64,76,.14);cursor:pointer;display:block}
+.sess-wrap.kb .sess-img{box-shadow:none}
 .sess-busy{position:absolute;top:12px;right:12px;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:6px;box-shadow:0 2px 8px rgba(49,64,76,.15)}
+/* クリック位置の波紋（クリックが効いたことの合図） */
+.click-fx{position:absolute;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:var(--accent);
+  pointer-events:none;opacity:.6;animation:clickFx .5s ease-out forwards}
+@keyframes clickFx{0%{transform:scale(.4);opacity:.6}100%{transform:scale(2.6);opacity:0}}
+/* 状態表示ピル（送信中／入力できます／クリック案内） */
+.sess-status{position:absolute;top:10px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:6px;
+  font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;box-shadow:0 2px 8px rgba(49,64,76,.15);white-space:nowrap}
+.sess-status.busy{background:var(--accent);color:#fff}
+.sess-status.ok{background:var(--accent-tint);color:var(--accent-ink);border:1px solid var(--accent-line)}
+.sess-status.hint{background:var(--panel);color:var(--ink-2);border:1px solid var(--line)}
 /* サイトがファイル選択を要求している時の強調 */
 .btn.file-want{background:var(--accent);color:#fff;border-color:var(--accent);animation:filePulse 1.1s ease-in-out infinite}
 @keyframes filePulse{0%,100%{box-shadow:0 0 0 0 rgba(79,70,229,.45)}50%{box-shadow:0 0 0 6px rgba(79,70,229,0)}}
 .file-banner{display:flex;align-items:center;gap:10px;padding:8px 14px;font-size:13px;color:var(--accent-ink);
   background:var(--accent-tint);border-bottom:1px solid var(--line)}
 /* IME・キー入力を受ける隠しinput（クリックは画像へ通す。IME候補が中央付近に出るよう配置） */
-.sess-ime{position:absolute;left:50%;top:50%;width:1px;height:1px;opacity:0;border:0;padding:0;margin:0;background:transparent;pointer-events:none;caret-color:transparent}
+/* 画面を覆う透明な入力欄。クリックで自動フォーカス→キーボード/IME が確実に効く。
+   文字・キャレットは透明（見た目は下の画像だけ）。 */
+.sess-capture{position:absolute;inset:0;width:100%;height:100%;margin:0;padding:0;border:0;border-radius:2px;
+  background:transparent;color:transparent;caret-color:transparent;cursor:pointer;font-size:16px;outline:none}
+.sess-capture::selection{background:transparent}
 .url-thumb{position:absolute;right:14px;bottom:14px;width:150px;background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 20px rgba(49,64,76,.16);overflow:hidden;z-index:5}
 .url-thumb-cap{font-size:10.5px;color:var(--ink-2);padding:4px 8px;border-bottom:1px solid var(--line-2)}
 .url-thumb-body{height:150px;display:flex;align-items:center;justify-content:center;padding:8px;background:var(--panel-2)}
