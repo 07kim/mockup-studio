@@ -14,6 +14,15 @@ async function api(action, body) {
 
 const KEYMAP = { Enter: 'Enter', Backspace: 'Backspace', Delete: 'Delete', Tab: 'Tab', Escape: 'Escape', ArrowUp: 'ArrowUp', ArrowDown: 'ArrowDown', ArrowLeft: 'ArrowLeft', ArrowRight: 'ArrowRight', Home: 'Home', End: 'End' };
 
+// ブラウザ起動失敗（サーバーレス環境で Chromium が動かない等）を分かりやすく案内。
+function friendlyErr(msg) {
+  const m = String(msg || '');
+  if (/libnss3|shared librar|Executable doesn't exist|Failed to launch|browserType\.launch|Target page|chromium/i.test(m)) {
+    return 'この環境ではブラウザ起動に失敗しました（URL操作は常駐サーバーが必要）。ローカル版（npm run dev）ではご利用いただけます。画像やフォルダの取り込みはそのまま使えます。';
+  }
+  return m;
+}
+
 /**
  * URL 操作ステージ（サーバー側 Playwright を遠隔操作）。
  * クリック・入力・スクロールをサーバーの実ブラウザに転送し、
@@ -21,8 +30,12 @@ const KEYMAP = { Enter: 'Enter', Backspace: 'Backspace', Delete: 'Delete', Tab: 
  */
 export default function UrlStage(props) {
   const { session, onSessionChange, onCapture, onClose, previewItem, previewSettings, bgImg, version, pushToast } = props;
-  const vp = viewportFor(session.device, session.orientation);
+  // 撮影サイズ = デバイスの既定ビューポート。session.vw/vh があればそれで上書き（任意）。
+  const vp = (session.vw && session.vh)
+    ? { w: Math.round(session.vw), h: Math.round(session.vh) }
+    : viewportFor(session.device, session.orientation);
   const groups = framesByGroup();
+  const customSize = !!(session.vw && session.vh);
 
   const [shot, setShot] = useState(null);
   const [url, setUrl] = useState(session.url);
@@ -44,7 +57,7 @@ export default function UrlStage(props) {
     setLoading(true); setError(null); setShot(null); setCount(0);
     api('open', { url: session.url, width: vp.w, height: vp.h })
       .then((r) => { if (!alive) return; sidRef.current = r.id; setShot(r.screenshot); setUrl(r.url); setAddr(r.url); setLoading(false); })
-      .catch((e) => { if (!alive) return; setError(e.message); setLoading(false); });
+      .catch((e) => { if (!alive) return; setError(friendlyErr(e.message)); setLoading(false); });
     return () => {
       alive = false;
       const id = sidRef.current; sidRef.current = null;
@@ -113,9 +126,18 @@ export default function UrlStage(props) {
         <input className="addr-input" value={addr} placeholder="https://…" aria-label="アドレス"
           onChange={(e) => setAddr(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') go(); }} />
         <button className="btn sm" onClick={go}>移動</button>
-        <select value={session.device} onChange={(e) => onSessionChange({ ...session, device: e.target.value })} aria-label="デバイス" title="撮影するデバイス">
+        <select value={session.device} onChange={(e) => onSessionChange({ ...session, device: e.target.value, vw: null, vh: null })} aria-label="デバイス" title="撮影するデバイス">
           {groups.map((g) => <optgroup key={g.group} label={g.group}>{g.items.map((f) => <option key={f.id} value={f.id}>{f.label}</option>)}</optgroup>)}
         </select>
+        {/* 撮影サイズ（普段は意識しなくてOK・必要なら変更）。デバイスを選ぶと既定に戻る。 */}
+        <span className={`url-size${customSize ? ' custom' : ''}`} title="撮影サイズ（幅×高 px）。通常はデバイスにおまかせ。変えたい時だけ入力">
+          <input type="number" min={200} max={4000} value={vp.w}
+            onChange={(e) => onSessionChange({ ...session, vw: +e.target.value || vp.w, vh: vp.h })} aria-label="幅(px)" />
+          <span className="x">×</span>
+          <input type="number" min={200} max={4000} value={vp.h}
+            onChange={(e) => onSessionChange({ ...session, vw: vp.w, vh: +e.target.value || vp.h })} aria-label="高さ(px)" />
+          {customSize && <button className="url-size-reset" title="デバイスの既定サイズに戻す" onClick={() => onSessionChange({ ...session, vw: null, vh: null })}>↺</button>}
+        </span>
         <button className="cap" onClick={capture} disabled={loading || !!error}>＋ この画面を追加{count > 0 ? `（${count}）` : ''}</button>
         <button className="btn sm" onClick={onClose}>完了</button>
       </div>

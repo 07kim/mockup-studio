@@ -181,6 +181,15 @@ select,.mini-btn{font-size:12px;padding:5px 7px;border:1px solid var(--line);bor
 .urlbar .cap{background:var(--accent);color:#fff;border:1px solid var(--accent);border-radius:var(--r-sm);font-weight:600;font-size:12px;padding:6px 12px;white-space:nowrap}
 .urlbar .cap:hover:not(:disabled){background:var(--accent-ink)}
 .urlbar .cap:disabled{opacity:.5;cursor:not-allowed}
+/* 撮影サイズ（控えめ・普段は意識しなくてOK） */
+.url-size{display:inline-flex;align-items:center;gap:3px;color:var(--ink-2);opacity:.7}
+.url-size:hover,.url-size.custom{opacity:1}
+.url-size input{width:52px;font-size:11px;padding:4px 5px;border:1px solid var(--line-2);border-radius:5px;background:var(--panel);color:var(--ink-2);text-align:right}
+.url-size.custom input{color:var(--accent-ink);border-color:var(--accent-line)}
+.url-size input:focus{color:var(--ink);border-color:var(--accent)}
+.url-size .x{font-size:10px;opacity:.6}
+.url-size-reset{border:none;background:none;color:var(--ink-2);cursor:pointer;font-size:12px;padding:0 2px}
+.url-size-reset:hover{color:var(--accent)}
 /* URL 操作: 実撮影ビューポートで表示し縮小フィット（比率が一致）＋右下に小プレビュー */
 .url-body{flex:1;position:relative;min-height:0;background:var(--panel-2)}
 .sess-wrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;outline:none}

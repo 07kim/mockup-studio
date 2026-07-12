@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "npm install --omit=dev",
   "functions": {
     "app/api/render/route.js": {
       "maxDuration": 60
