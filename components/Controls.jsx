@@ -3,7 +3,6 @@
 import { useRef, useState } from 'react';
 import { COLOR_PRESETS } from '@/lib/defaults.js';
 import { getFrame } from '@/lib/devices.js';
-import { fileToImage } from '@/lib/import.js';
 
 // 写真の入れ方（アイコン付き）。frame は写実PNG枠では非表示。
 const FI = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.5, strokeLinejoin: 'round' };
@@ -25,19 +24,17 @@ const FITS = [
     icon: (<svg viewBox="0 0 44 34" {...FI}><rect x="13" y="6" width="18" height="22" rx="3" strokeDasharray="3 2" /><rect x="16" y="9" width="12" height="16" rx="1.5" fill="var(--accent)" stroke="none" opacity=".9" /></svg>),
   },
 ];
-const BGS = [['transparent', 'なし'], ['solid', '単色'], ['gradient', 'グラデ'], ['image', '画像']];
 
 /** 右パネル＝デザイン調整のインスペクター（書き出し設定は書き出しダイアログへ分離）。 */
 export default function Controls(props) {
   const {
     settings, onChange, onApplyAll, onApplySelected, selCount, totalCount,
-    onSetBg, focusedItem, onUpdateRenderOpts, onRerender, onOpenExport, onSaveProject, onLoadProject, busy,
+    focusedItem, onUpdateRenderOpts, onRerender, onOpenExport, onSaveProject, onLoadProject, busy,
   } = props;
   const isHtml = focusedItem && focusedItem.kind === 'html';
   const frame = focusedItem ? getFrame(focusedItem.device) : null;
   const frameIsAsset = frame?.kind === 'asset'; // 写実PNG枠は「フレームの色」が効かない
   const ro = focusedItem?.renderOpts || {};
-  const bgFileRef = useRef(null);
   const projRef = useRef(null);
   const [collapsed, setCollapsed] = useState({});
   const toggle = (k) => setCollapsed((c) => ({ ...c, [k]: !c[k] }));
@@ -46,11 +43,8 @@ export default function Controls(props) {
   const fitOpts = FITS.filter((f) => !(f.assetHide && frameIsAsset));
   const fitCur = FITS.find((f) => f.v === settings.fit) || FITS[0];
   const fitLabel = fitCur.name;
-  const bgSum = { transparent: 'なし', solid: '単色', gradient: 'グラデ', image: '画像' }[settings.bgType];
   const tiltSum = (settings.rotX || settings.rotY) ? `左右${settings.rotY || 0}°` : 'なし';
   const colorName = COLOR_PRESETS.find((p) => p.color === settings.frameColor)?.name || 'カスタム';
-
-  const handleBg = async (file) => { if (!file) return; try { const { img } = await fileToImage(file); onSetBg(img); } catch {} };
 
   return (
     <>
@@ -107,25 +101,7 @@ export default function Controls(props) {
             )}
           </Section>
 
-          {/* 背景 */}
-          <Section id="bg" title="背景" sum={bgSum} collapsed={collapsed} toggle={toggle}>
-            <div className="seg full">
-              {BGS.map(([v, l]) => <button key={v} className={settings.bgType === v ? 'on' : ''} onClick={() => set({ bgType: v })}>{l}</button>)}
-            </div>
-            {settings.bgType === 'solid' && <div className="row" style={{ marginTop: 10 }}><input type="color" className="color" value={settings.bgColor} onChange={(e) => set({ bgColor: e.target.value })} /><input type="text" value={settings.bgColor} onChange={(e) => set({ bgColor: e.target.value })} /></div>}
-            {settings.bgType === 'gradient' && (
-              <div style={{ marginTop: 10 }}>
-                <div className="row"><input type="color" className="color" value={settings.gradA} onChange={(e) => set({ gradA: e.target.value })} /><input type="color" className="color" value={settings.gradB} onChange={(e) => set({ gradB: e.target.value })} /></div>
-                <div style={{ marginTop: 10 }}><Slider label="角度" val={`${settings.gradAngle}°`} min={0} max={360} value={settings.gradAngle} onChange={(v) => set({ gradAngle: v })} /></div>
-              </div>
-            )}
-            {settings.bgType === 'image' && (
-              <div style={{ marginTop: 10 }}>
-                <input ref={bgFileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleBg(e.target.files?.[0])} />
-                <button className="btn sm" style={{ width: '100%' }} onClick={() => bgFileRef.current?.click()}>背景画像を選ぶ</button>
-              </div>
-            )}
-          </Section>
+          {/* 背景は中央プレビュー左下の「背景」ボタンで設定する（右パネルからは分離） */}
 
           {/* 立体・傾き */}
           <Section id="tilt" title="立体・傾き" sum={tiltSum} collapsed={collapsed} toggle={toggle}>

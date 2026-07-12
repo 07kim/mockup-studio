@@ -3,12 +3,13 @@
 import ItemCanvas from './ItemCanvas.jsx';
 import RenderingIndicator from './RenderingIndicator.jsx';
 import DeviceToolbar from './DeviceToolbar.jsx';
+import BgControl from './BgControl.jsx';
 
 const PREVIEW_RS = 0.9;
 const PREVIEW_N = 14;
 
 /** 中央フォーカスプレビュー（§4 / §7）。 */
-export default function Preview({ item, settings, bgImg, version, warnCount, onAddImage, onSetDevice, onSetOrientation, onChange }) {
+export default function Preview({ item, settings, bgImg, version, warnCount, onAddImage, onSetDevice, onSetOrientation, onChange, onSetBg }) {
   if (!item) {
     return (
       <div className="stage-body">
@@ -38,6 +39,7 @@ export default function Preview({ item, settings, bgImg, version, warnCount, onA
       <div className="checker">
         <ItemCanvas item={item} settings={settings} bgImg={bgImg} rs={PREVIEW_RS} N={PREVIEW_N} version={version} />
       </div>
+      <BgControl settings={settings} onChange={onChange} onSetBg={onSetBg} />
       <div className="stage-tools">
         <span style={{ color: 'var(--ink)', fontWeight: 500, maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</span>
         {warnCount > 0 && <span className="warn-txt">警告 {warnCount}件</span>}

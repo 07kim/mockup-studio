@@ -368,7 +368,8 @@ export default function Page() {
               onCardClick={onCardClick} onToggleSelect={toggleSelect} />
           ) : (
             <Preview item={focusedItem} settings={focusedItem ? effSettings(focusedItem) : settings} bgImg={ui.bgImg} version={framesVersion} warnCount={focusWarnCount} onAddImage={() => imgPickRef.current?.click()}
-              onSetDevice={setItemDevice} onSetOrientation={setItemOrientation} onChange={applySetting} />
+              onSetDevice={setItemDevice} onSetOrientation={setItemOrientation} onChange={applySetting}
+              onSetBg={(img) => dispatch({ type: 'SET_BG', img })} />
           )}
         </div>
 
@@ -378,8 +379,7 @@ export default function Page() {
             settings={displayedSettings} onChange={applySetting}
             onApplyAll={applyToAll} onApplySelected={applyToSelected}
             selCount={selCount} totalCount={ui.items.length}
-            onSetBg={(img) => dispatch({ type: 'SET_BG', img })} focusedItem={focusedItem}
-            onSetDevice={setItemDevice} onSetOrientation={setItemOrientation}
+            focusedItem={focusedItem}
             onUpdateRenderOpts={updateRenderOpts} onRerender={() => retryHtml(ui.focusedId)}
             onOpenExport={() => setShowExport(true)}
             onSaveProject={doSaveProject} onLoadProject={doLoadProject} busy={busy}

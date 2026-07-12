@@ -1,17 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { groupNames, groupOf, defaultDeviceForGroup } from '@/lib/devices.js';
 
 /** 素材一覧（左ペイン）。カード＝チェック/サムネ/名前/デバイス/向き（§3.8 / §3.7）。 */
 export default function ItemList(props) {
   const {
     items, focusedId, selectedIds, batchWarnings,
-    onCardClick, onToggleSelect, onRename, onSetDevice, onSetOrientation,
+    onCardClick, onToggleSelect, onRename,
     onSelectAll, onSelectNone, onRetry, onFixAll, onDelete, onReorder,
   } = props;
 
-  const groups = groupNames();
   const warnIds = new Set(batchWarnings.map((w) => w.itemId));
   const [dragId, setDragId] = useState(null);
   const [overId, setOverId] = useState(null);
@@ -79,15 +77,14 @@ export default function ItemList(props) {
                 <button className="del" title="削除" aria-label="削除"
                   onClick={(e) => { e.stopPropagation(); onDelete(it.id); }}>×</button>
               </div>
-              <div className="item-body" onClick={(e) => e.stopPropagation()}>
-                {/* 左は大分類のみ（機種・向き・ノッチは右パネルで選ぶ） */}
-                <select value={groupOf(it.device)} onChange={(e) => onSetDevice(it.id, defaultDeviceForGroup(e.target.value))} aria-label="デバイスの種類">
-                  {groups.map((g) => <option key={g} value={g}>{g}</option>)}
-                </select>
-                {it.kind === 'html' && <button className="mini-btn" onClick={() => onRetry(it.id)} disabled={it.loading}>再描画</button>}
-                {warnIds.has(it.id) && <span className="warn-txt">他と違う端末</span>}
-                {it.error && <button className="mini-btn" onClick={() => onRetry(it.id)}>再試行</button>}
-              </div>
+              {/* 機種・向き・ノッチは中央プレビュー上のツールバーで操作するので、左には出さない */}
+              {(it.kind === 'html' || warnIds.has(it.id) || it.error) && (
+                <div className="item-body" onClick={(e) => e.stopPropagation()}>
+                  {it.kind === 'html' && <button className="mini-btn" onClick={() => onRetry(it.id)} disabled={it.loading}>再描画</button>}
+                  {warnIds.has(it.id) && <span className="warn-txt">他と違う端末</span>}
+                  {it.error && <button className="mini-btn" onClick={() => onRetry(it.id)}>再試行</button>}
+                </div>
+              )}
             </div>
           );
         })}
