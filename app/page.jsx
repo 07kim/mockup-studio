@@ -353,8 +353,10 @@ export default function Page() {
           )}
         </div>
         <div className="top-right">
-          <button className="btn sm" onClick={() => setShowFrameStudio(true)}>フレーム作成</button>
-          <span className="count">{ui.items.length} 件</span>
+          {ui.items.length > 0 && <span className="count">{ui.items.length} 件</span>}
+          {/* 上級機能。一等地で主張しすぎないよう控えめなリンクに。 */}
+          <button className="ghost-link" onClick={() => setShowFrameStudio(true)}
+            title="自分の端末画像でオリジナルのフレームを作る（上級者向け）">＋ 自作フレーム</button>
         </div>
       </header>
 
