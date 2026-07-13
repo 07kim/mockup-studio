@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { COLOR_PRESETS, QUICK_STYLES } from '@/lib/defaults.js';
+import { COLOR_PRESETS } from '@/lib/defaults.js';
 import { getFrame } from '@/lib/devices.js';
 
 // 写真の入れ方（アイコン付き）。frame は写実PNG枠では非表示。
@@ -61,19 +61,6 @@ export default function Controls(props) {
         <>
           {/* 「◯◯を調整中」の案内は邪魔なので撤去。編集対象は左の一覧のハイライトで分かる。
               複数へまとめて反映はフッターの「今の設定を他にも反映」で行う。 */}
-
-          {/* クイックスタイル：1クリックで映える作品に（体験の最短ルート・最上部に配置） */}
-          <div className="section qstyle-sec">
-            <p className="label">スタイル</p>
-            <div className="qstyles">
-              {QUICK_STYLES.map((s) => (
-                <button key={s.id} type="button" className="qstyle" title={s.label} onClick={() => set(s.patch)}>
-                  <span className="qs-thumb" style={{ background: s.thumb }}><span className="qs-dev" /></span>
-                  <span className="qs-name">{s.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
 
           {/* 機種・向き・ノッチは中央プレビュー上のツールバーで操作（右メニューには置かない） */}
 
