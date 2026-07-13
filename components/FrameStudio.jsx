@@ -171,47 +171,54 @@ export default function FrameStudio({ onClose, onChanged, pushToast }) {
         <input ref={baseFileRef} type="file" accept="image/png,image/webp" style={{ display: 'none' }} onChange={(e) => onBaseFile(e.target.files?.[0])} />
         <input ref={overlayFileRef} type="file" accept="image/png,image/webp" style={{ display: 'none' }} onChange={(e) => onOverlayFile(e.target.files?.[0])} />
 
-        <div className="row tight" style={{ marginBottom: 8 }}>
-          <button onClick={() => baseFileRef.current?.click()}>base 画像を選択</button>
-          <button onClick={() => overlayFileRef.current?.click()} disabled={!baseImg}>overlay（任意）</button>
-        </div>
+        <p className="muted" style={{ marginTop: 0 }}>
+          お手持ちの<b>端末の写真</b>（枠だけ・画面部分が空き、または1色でベタ塗りのPNG）から、好きな機種を追加できます。
+        </p>
 
-        {baseImg && (
+        {!baseImg ? (
+          <button className="primary" style={{ width: '100%' }} onClick={() => baseFileRef.current?.click()}>
+            ① 端末の写真を選ぶ
+          </button>
+        ) : (
           <>
-            <p className="muted">画面領域をドラッグで指定（青枠）。base は画面を透明に抜いた PNG 推奨。</p>
+            <p className="step-head">② 画面が入る場所を囲む</p>
+            <p className="muted" style={{ marginTop: 0 }}>写真の上で、スクリーン（画面）が入る四角をドラッグしてください。数値でも微調整できます。</p>
             <canvas
               ref={canvasRef}
-              style={{ border: '1px solid var(--border)', cursor: 'crosshair', maxWidth: '100%' }}
+              style={{ border: '1px solid var(--line)', borderRadius: 8, cursor: 'crosshair', maxWidth: '100%' }}
               onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp} onMouseLeave={onUp}
             />
             <div className="row tight" style={{ marginTop: 8 }}>
-              <div className="field" style={{ margin: 0 }}><label>X</label><input type="number" value={rect.x} onChange={(e) => setRect({ ...rect, x: +e.target.value })} /></div>
-              <div className="field" style={{ margin: 0 }}><label>Y</label><input type="number" value={rect.y} onChange={(e) => setRect({ ...rect, y: +e.target.value })} /></div>
-              <div className="field" style={{ margin: 0 }}><label>W</label><input type="number" value={rect.w} onChange={(e) => setRect({ ...rect, w: +e.target.value })} /></div>
-              <div className="field" style={{ margin: 0 }}><label>H</label><input type="number" value={rect.h} onChange={(e) => setRect({ ...rect, h: +e.target.value })} /></div>
+              <div className="field" style={{ margin: 0 }}><label>左</label><input type="number" value={rect.x} onChange={(e) => setRect({ ...rect, x: +e.target.value })} /></div>
+              <div className="field" style={{ margin: 0 }}><label>上</label><input type="number" value={rect.y} onChange={(e) => setRect({ ...rect, y: +e.target.value })} /></div>
+              <div className="field" style={{ margin: 0 }}><label>幅</label><input type="number" value={rect.w} onChange={(e) => setRect({ ...rect, w: +e.target.value })} /></div>
+              <div className="field" style={{ margin: 0 }}><label>高さ</label><input type="number" value={rect.h} onChange={(e) => setRect({ ...rect, h: +e.target.value })} /></div>
               <div className="field" style={{ margin: 0 }}><label>角丸</label><input type="number" value={rect.radius} onChange={(e) => setRect({ ...rect, radius: +e.target.value })} /></div>
             </div>
+            <button className="btn sm" style={{ marginTop: 6 }} onClick={() => baseFileRef.current?.click()}>写真を選び直す</button>
 
-            <label className="row" style={{ margin: '8px 0', cursor: 'pointer' }}>
+            <p className="step-head">③ 画面の色を切り抜く（任意）</p>
+            <label className="row" style={{ margin: '2px 0 0', cursor: 'pointer' }}>
               <input type="checkbox" checked={chroma.on} onChange={(e) => setChroma({ ...chroma, on: e.target.checked })} style={{ flex: '0 0 auto', width: 16, height: 16 }} />
-              <span style={{ flex: 1 }}>画面プレースホルダ色を透明化</span>
+              <span style={{ flex: 1 }}>画面が1色で塗られている時、その色を透明にする</span>
             </label>
             {chroma.on && (
-              <div className="row tight">
+              <div className="row tight" style={{ marginTop: 6, alignItems: 'center' }}>
+                <span className="val">抜く色</span>
                 <input type="color" value={chroma.color} onChange={(e) => setChroma({ ...chroma, color: e.target.value })} />
-                <div className="field" style={{ margin: 0 }}><label>しきい値</label><input type="number" value={chroma.threshold} onChange={(e) => setChroma({ ...chroma, threshold: +e.target.value })} /></div>
-                <button onClick={applyChroma}>適用</button>
+                <div className="field" style={{ margin: 0 }}><label>色の許容範囲</label><input type="number" value={chroma.threshold} onChange={(e) => setChroma({ ...chroma, threshold: +e.target.value })} /></div>
+                <button onClick={applyChroma}>この色を抜く</button>
               </div>
             )}
 
-            <div className="row tight" style={{ marginTop: 8 }}>
-              <div className="field" style={{ margin: 0 }}><label>ラベル</label><input type="text" value={label} onChange={(e) => setLabel(e.target.value)} /></div>
-            </div>
-            <div className="row tight">
-              <div className="field" style={{ margin: 0 }}><label>viewport 幅</label><input type="number" value={vp.w} onChange={(e) => setVp({ ...vp, w: +e.target.value })} /></div>
-              <div className="field" style={{ margin: 0 }}><label>viewport 高</label><input type="number" value={vp.h} onChange={(e) => setVp({ ...vp, h: +e.target.value })} /></div>
-            </div>
-            <button className="primary" style={{ width: '100%', marginTop: 8 }} onClick={save}>フレームを保存</button>
+            <p className="step-head">④ 仕上げ</p>
+            <div className="field" style={{ margin: 0 }}><label>名前（機種一覧に表示されます）</label><input type="text" value={label} onChange={(e) => setLabel(e.target.value)} /></div>
+            <button className="btn sm" style={{ marginTop: 8 }} onClick={() => overlayFileRef.current?.click()}>
+              {overlayDataUrl ? '前面パーツを変更（ノッチ等）' : 'ノッチなどを前面に重ねる（任意）'}
+            </button>
+
+            <button className="primary" style={{ width: '100%', marginTop: 10 }} onClick={save}>このフレームを保存</button>
+            <p className="muted" style={{ fontSize: 11.5, marginTop: 4 }}>保存すると機種一覧に追加されます。※写真ベースのため色替えは不可（色を変えたい時は「パラメータで作る」）。</p>
           </>
         )}
         </>)}

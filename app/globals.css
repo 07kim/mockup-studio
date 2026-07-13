@@ -371,6 +371,8 @@ kbd{background:var(--panel-2);border:1px solid var(--line);border-radius:4px;pad
 .panel-box button.primary:not(.sw):not(.chk):not(.link):not(.chip):hover:not(:disabled){background:var(--accent);filter:brightness(1.05)}
 .panel-box button.danger{color:var(--danger)}
 .panel-box canvas{max-width:100%}
+/* 写真から作る：手順見出し */
+.step-head{font-size:13px;font-weight:600;color:var(--ink);margin:16px 0 6px}
 /* フレームメーカー（パラメータで作る） */
 .fm{display:grid;grid-template-columns:300px 1fr;gap:20px;align-items:start}
 @media (max-width:640px){.fm{grid-template-columns:1fr}}
