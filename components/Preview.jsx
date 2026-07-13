@@ -47,7 +47,18 @@ export default function Preview({ item, settings, bgImg, version, onAddImage, on
       </div>
     );
   }
-  if (item.loading) return <div className="stage-body"><RenderingIndicator estimate={6} /></div>;
+  if (item.loading) {
+    // URL/フォルダはヘッドレスブラウザで実描画するため、画像より時間がかかる。
+    const isHtml = item.kind === 'html';
+    const label = item.source?.type === 'folder' ? 'フォルダを描画しています'
+      : item.source?.type === 'url' ? 'サイトを描画しています' : 'レンダリング中';
+    return (
+      <div className="stage-body">
+        <RenderingIndicator estimate={isHtml ? 10 : 6} label={label}
+          note={isHtml ? 'ブラウザでページを開いて撮影しています' : ''} />
+      </div>
+    );
+  }
   if (item.error) return <div className="stage-body"><div className="stage-empty"><p style={{ color: 'var(--danger)' }}>失敗: {item.error}</p><p>カードの「再描画」で再試行できます。</p></div></div>;
 
   return (
