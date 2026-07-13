@@ -39,7 +39,7 @@ header.top{height:52px;border-bottom:1px solid var(--line);display:flex;align-it
 .seg button.on{background:var(--accent-tint);color:var(--accent-ink);font-weight:600}
 .seg button:disabled{opacity:.45;cursor:not-allowed}
 .seg.full{display:flex;width:100%}
-.seg.full button{flex:1;text-align:center}
+.seg.full button{flex:1;text-align:center;padding-left:6px;padding-right:6px;font-size:12px}
 
 /* buttons */
 .btn{border:1px solid var(--line);border-radius:var(--r-sm);background:var(--panel);font-weight:600;font-size:13px;padding:8px 14px}
@@ -191,14 +191,14 @@ select,.mini-btn{font-size:12px;padding:5px 7px;border:1px solid var(--line);bor
 .bgpop-custom{margin-top:8px;border-top:1px solid var(--line-2);padding-top:10px}
 
 /* 写真の入れ方（アイコンカード） */
-.fit-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.fit-opt{display:flex;flex-direction:column;align-items:center;gap:5px;padding:9px 4px 8px;
+.fit-grid{display:flex;gap:6px}
+.fit-opt{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 3px 7px;
   border:1px solid var(--line);border-radius:var(--r-sm);background:var(--panel);color:var(--ink-2);cursor:pointer}
 .fit-opt:hover{border-color:var(--accent-line)}
 .fit-opt.on{border-color:var(--accent);background:var(--accent-tint);color:var(--accent-ink)}
 .fit-ic{line-height:0}
-.fit-ic svg{width:40px;height:31px}
-.fit-name{font-size:12px;font-weight:600}
+.fit-ic svg{width:26px;height:20px}
+.fit-name{font-size:11px;font-weight:600;white-space:nowrap}
 .fit-hint{font-size:11.5px;color:var(--ink-2);line-height:1.5;margin-top:8px}
 .stage-empty{color:var(--ink-2);text-align:center;max-width:340px}
 .stage-empty h2{color:var(--ink);font-size:16px;font-weight:600;margin:0 0 6px}
