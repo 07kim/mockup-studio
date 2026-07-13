@@ -153,7 +153,7 @@ export default function FrameStudio({ onClose, onChanged, pushToast }) {
 
   return (
     <div className="overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label="カスタムフレーム作成">
-      <div className="panel-box" style={{ maxWidth: 620 }} onClick={(e) => e.stopPropagation()}>
+      <div className="panel-box" style={{ maxWidth: mode === 'param' ? 880 : 560, width: '100%' }} onClick={(e) => e.stopPropagation()}>
         <h3 style={{ marginTop: 0 }}>フレームを自作</h3>
 
         <input ref={importRef} type="file" accept=".json" style={{ display: 'none' }} onChange={(e) => doImport(e.target.files?.[0])} />
