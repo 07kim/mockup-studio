@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { readRaw, saveFrame, deleteFrame, exportJson, importJson } from '@/lib/customFrames.js';
 import { hexToRgb } from '@/lib/engine.js';
+import FrameMaker from './FrameMaker.jsx';
 
 const MAXW = 460; // プレビュー最大幅
 
@@ -14,6 +15,7 @@ export default function FrameStudio({ onClose, onChanged, pushToast }) {
   const [label, setLabel] = useState('マイフレーム');
   const [vp, setVp] = useState({ w: 1440, h: 900 });
   const [chroma, setChroma] = useState({ on: false, color: '#ff0000', threshold: 100 });
+  const [mode, setMode] = useState('param'); // 'param'（パラメータで作る・色替え可）| 'photo'（写真から）
   const [list, setList] = useState([]);
   const canvasRef = useRef(null);
   const baseFileRef = useRef(null);
@@ -151,12 +153,23 @@ export default function FrameStudio({ onClose, onChanged, pushToast }) {
 
   return (
     <div className="overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label="カスタムフレーム作成">
-      <div className="panel-box" style={{ maxWidth: 560 }} onClick={(e) => e.stopPropagation()}>
-        <h3 style={{ marginTop: 0 }}>カスタムフレーム作成</h3>
+      <div className="panel-box" style={{ maxWidth: 620 }} onClick={(e) => e.stopPropagation()}>
+        <h3 style={{ marginTop: 0 }}>フレームを自作</h3>
 
+        <input ref={importRef} type="file" accept=".json" style={{ display: 'none' }} onChange={(e) => doImport(e.target.files?.[0])} />
+
+        <div className="seg full" style={{ marginBottom: 14 }}>
+          <button className={mode === 'param' ? 'on' : ''} onClick={() => setMode('param')}>パラメータで作る（色替え可）</button>
+          <button className={mode === 'photo' ? 'on' : ''} onClick={() => setMode('photo')}>写真から作る</button>
+        </div>
+
+        {mode === 'param' && (
+          <FrameMaker onChanged={() => { onChanged?.(); setList(readRaw()); }} pushToast={pushToast} />
+        )}
+
+        {mode === 'photo' && (<>
         <input ref={baseFileRef} type="file" accept="image/png,image/webp" style={{ display: 'none' }} onChange={(e) => onBaseFile(e.target.files?.[0])} />
         <input ref={overlayFileRef} type="file" accept="image/png,image/webp" style={{ display: 'none' }} onChange={(e) => onOverlayFile(e.target.files?.[0])} />
-        <input ref={importRef} type="file" accept=".json" style={{ display: 'none' }} onChange={(e) => doImport(e.target.files?.[0])} />
 
         <div className="row tight" style={{ marginBottom: 8 }}>
           <button onClick={() => baseFileRef.current?.click()}>base 画像を選択</button>
@@ -201,12 +214,13 @@ export default function FrameStudio({ onClose, onChanged, pushToast }) {
             <button className="primary" style={{ width: '100%', marginTop: 8 }} onClick={save}>フレームを保存</button>
           </>
         )}
+        </>)}
 
         <h3 className="section" style={{ marginTop: 16 }}>保存済みフレーム</h3>
         {list.length === 0 && <p className="muted">まだありません。</p>}
         {list.map((f) => (
           <div className="row" key={f.id} style={{ marginBottom: 4 }}>
-            <span style={{ flex: 1 }}>{f.label} <span className="muted">({f.asset.imageSize.w}×{f.asset.imageSize.h})</span></span>
+            <span style={{ flex: 1 }}>{f.label} <span className="muted">({f.kind === 'programmatic' ? 'パラメータ' : `${f.asset.imageSize.w}×${f.asset.imageSize.h}`})</span></span>
             <button className="danger" style={{ flex: '0 0 auto' }} onClick={() => remove(f.id)}>削除</button>
           </div>
         ))}
