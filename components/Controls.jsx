@@ -36,7 +36,8 @@ export default function Controls(props) {
   const frameIsAsset = frame?.kind === 'asset'; // 写実PNG枠は「フレームの色」が効かない
   const ro = focusedItem?.renderOpts || {};
   const projRef = useRef(null);
-  const [collapsed, setCollapsed] = useState({});
+  // よく使う 色/写真の入れ方/傾き は開き、詳細（画面内の画像・影余白）は既定で畳んでスクロールを減らす。
+  const [collapsed, setCollapsed] = useState({ size: true, finish: true });
   const toggle = (k) => setCollapsed((c) => ({ ...c, [k]: !c[k] }));
   const set = (patch) => onChange(patch);
 

@@ -73,8 +73,12 @@ export default function FrameStudio({ onClose, onChanged, pushToast }) {
 
   // rect ドラッグ描画
   const canvasPos = (e) => {
-    const r = canvasRef.current.getBoundingClientRect();
-    return { x: (e.clientX - r.left) / scale, y: (e.clientY - r.top) / scale };
+    const cv = canvasRef.current;
+    const r = cv.getBoundingClientRect();
+    // 表示サイズが CSS で縮小されても正しく画像座標へ変換（内部px/表示px ÷ scale）。
+    const sx = r.width ? cv.width / r.width : 1;
+    const sy = r.height ? cv.height / r.height : 1;
+    return { x: ((e.clientX - r.left) * sx) / scale, y: ((e.clientY - r.top) * sy) / scale };
   };
   const onDown = (e) => { drag.current = canvasPos(e); };
   const onMove = (e) => {
@@ -153,7 +157,7 @@ export default function FrameStudio({ onClose, onChanged, pushToast }) {
 
   return (
     <div className="overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label="カスタムフレーム作成">
-      <div className="panel-box" style={{ maxWidth: mode === 'param' ? 880 : 560, width: '100%' }} onClick={(e) => e.stopPropagation()}>
+      <div className="panel-box" style={{ maxWidth: 880, width: '100%' }} onClick={(e) => e.stopPropagation()}>
         <h3 style={{ marginTop: 0 }}>フレームを自作</h3>
 
         <input ref={importRef} type="file" accept=".json" style={{ display: 'none' }} onChange={(e) => doImport(e.target.files?.[0])} />
@@ -180,46 +184,51 @@ export default function FrameStudio({ onClose, onChanged, pushToast }) {
             ① 端末の写真を選ぶ
           </button>
         ) : (
-          <>
-            <p className="step-head">② 画面が入る場所を囲む</p>
-            <p className="muted" style={{ marginTop: 0 }}>写真の上で、スクリーン（画面）が入る四角をドラッグしてください。数値でも微調整できます。</p>
-            <canvas
-              ref={canvasRef}
-              style={{ border: '1px solid var(--line)', borderRadius: 8, cursor: 'crosshair', maxWidth: '100%' }}
-              onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp} onMouseLeave={onUp}
-            />
-            <div className="row tight" style={{ marginTop: 8 }}>
-              <div className="field" style={{ margin: 0 }}><label>左</label><input type="number" value={rect.x} onChange={(e) => setRect({ ...rect, x: +e.target.value })} /></div>
-              <div className="field" style={{ margin: 0 }}><label>上</label><input type="number" value={rect.y} onChange={(e) => setRect({ ...rect, y: +e.target.value })} /></div>
-              <div className="field" style={{ margin: 0 }}><label>幅</label><input type="number" value={rect.w} onChange={(e) => setRect({ ...rect, w: +e.target.value })} /></div>
-              <div className="field" style={{ margin: 0 }}><label>高さ</label><input type="number" value={rect.h} onChange={(e) => setRect({ ...rect, h: +e.target.value })} /></div>
-              <div className="field" style={{ margin: 0 }}><label>角丸</label><input type="number" value={rect.radius} onChange={(e) => setRect({ ...rect, radius: +e.target.value })} /></div>
+          <div className="fm fm-photo">
+            <div className="fm-preview">
+              <canvas
+                ref={canvasRef}
+                style={{ cursor: 'crosshair', maxWidth: '100%', maxHeight: 440, borderRadius: 6 }}
+                onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp} onMouseLeave={onUp}
+              />
             </div>
-            <button className="btn sm" style={{ marginTop: 6 }} onClick={() => baseFileRef.current?.click()}>写真を選び直す</button>
-
-            <p className="step-head">③ 画面の色を切り抜く（任意）</p>
-            <label className="row" style={{ margin: '2px 0 0', cursor: 'pointer' }}>
-              <input type="checkbox" checked={chroma.on} onChange={(e) => setChroma({ ...chroma, on: e.target.checked })} style={{ flex: '0 0 auto', width: 16, height: 16 }} />
-              <span style={{ flex: 1 }}>画面が1色で塗られている時、その色を透明にする</span>
-            </label>
-            {chroma.on && (
-              <div className="row tight" style={{ marginTop: 6, alignItems: 'center' }}>
-                <span className="val">抜く色</span>
-                <input type="color" value={chroma.color} onChange={(e) => setChroma({ ...chroma, color: e.target.value })} />
-                <div className="field" style={{ margin: 0 }}><label>色の許容範囲</label><input type="number" value={chroma.threshold} onChange={(e) => setChroma({ ...chroma, threshold: +e.target.value })} /></div>
-                <button onClick={applyChroma}>この色を抜く</button>
+            <div className="fm-controls">
+              <p className="step-head" style={{ marginTop: 0 }}>② 画面が入る場所を囲む</p>
+              <p className="muted" style={{ marginTop: 0 }}>左の写真で、スクリーンが入る四角をドラッグ。数値でも微調整できます。</p>
+              <div className="fm-rect">
+                <div className="field" style={{ margin: 0 }}><label>左</label><input type="number" value={rect.x} onChange={(e) => setRect({ ...rect, x: +e.target.value })} /></div>
+                <div className="field" style={{ margin: 0 }}><label>上</label><input type="number" value={rect.y} onChange={(e) => setRect({ ...rect, y: +e.target.value })} /></div>
+                <div className="field" style={{ margin: 0 }}><label>幅</label><input type="number" value={rect.w} onChange={(e) => setRect({ ...rect, w: +e.target.value })} /></div>
+                <div className="field" style={{ margin: 0 }}><label>高さ</label><input type="number" value={rect.h} onChange={(e) => setRect({ ...rect, h: +e.target.value })} /></div>
+                <div className="field" style={{ margin: 0 }}><label>角丸</label><input type="number" value={rect.radius} onChange={(e) => setRect({ ...rect, radius: +e.target.value })} /></div>
               </div>
-            )}
+              <button className="btn sm" style={{ marginTop: 2, alignSelf: 'start' }} onClick={() => baseFileRef.current?.click()}>写真を選び直す</button>
 
-            <p className="step-head">④ 仕上げ</p>
-            <div className="field" style={{ margin: 0 }}><label>名前（機種一覧に表示されます）</label><input type="text" value={label} onChange={(e) => setLabel(e.target.value)} /></div>
-            <button className="btn sm" style={{ marginTop: 8 }} onClick={() => overlayFileRef.current?.click()}>
-              {overlayDataUrl ? '前面パーツを変更（ノッチ等）' : 'ノッチなどを前面に重ねる（任意）'}
-            </button>
+              <p className="step-head">③ 画面の色を切り抜く（任意）</p>
+              <label className="row" style={{ margin: 0, cursor: 'pointer' }}>
+                <input type="checkbox" checked={chroma.on} onChange={(e) => setChroma({ ...chroma, on: e.target.checked })} style={{ flex: '0 0 auto', width: 16, height: 16 }} />
+                <span style={{ flex: 1 }}>画面が1色で塗られている時、その色を透明にする</span>
+              </label>
+              {chroma.on && (
+                <div className="row tight" style={{ marginTop: 6, alignItems: 'center' }}>
+                  <span className="val">抜く色</span>
+                  <input type="color" value={chroma.color} onChange={(e) => setChroma({ ...chroma, color: e.target.value })} />
+                  <div className="field" style={{ margin: 0 }}><label>許容範囲</label><input type="number" value={chroma.threshold} onChange={(e) => setChroma({ ...chroma, threshold: +e.target.value })} /></div>
+                  <button onClick={applyChroma}>この色を抜く</button>
+                </div>
+              )}
 
-            <button className="primary" style={{ width: '100%', marginTop: 10 }} onClick={save}>このフレームを保存</button>
-            <p className="muted" style={{ fontSize: 11.5, marginTop: 4 }}>保存すると機種一覧に追加されます。※写真ベースのため色替えは不可（色を変えたい時は「パラメータで作る」）。</p>
-          </>
+              <p className="step-head">④ 仕上げ</p>
+              <div className="fm-row2">
+                <div className="field" style={{ margin: 0 }}><label>名前（機種一覧に表示）</label><input type="text" value={label} onChange={(e) => setLabel(e.target.value)} /></div>
+                <div className="field" style={{ margin: 0 }}><label>ノッチ等を重ねる（任意）</label>
+                  <button className="btn sm" style={{ width: '100%' }} onClick={() => overlayFileRef.current?.click()}>{overlayDataUrl ? '重ねる画像を変更' : '画像を選ぶ'}</button>
+                </div>
+              </div>
+              <button className="primary" style={{ width: '100%', marginTop: 8 }} onClick={save}>このフレームを保存</button>
+              <p className="muted" style={{ fontSize: 11.5, marginTop: 2 }}>機種一覧に追加されます。※写真ベースのため色替えは不可（色を変えたい時は「パラメータで作る」）。</p>
+            </div>
+          </div>
         )}
         </>)}
 
