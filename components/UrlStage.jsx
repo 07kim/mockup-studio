@@ -62,11 +62,15 @@ export default function UrlStage(props) {
   const composing = useRef(false);    // IME変換中フラグ
   const queue = useRef([]);
   const running = useRef(false);
-  const wheelAccum = useRef({ dy: 0, t: null });
+  const wheelAccum = useRef({ dx: 0, dy: 0, x: null, y: null, t: null });
   const refreshTimers = useRef([]);
+  const wrapRef = useRef(null);        // ライブ画面のラッパ（wheel を非passiveで拾う）
+  const enqueueRef = useRef(() => {}); // 最新の enqueue をネイティブリスナから呼ぶ
+  const interactiveRef = useRef(false);
   // pump など固定コールバックから最新の url / vp を参照するための ref。
   const vpRef = useRef(vp); vpRef.current = vp;
   const urlRef = useRef(url); urlRef.current = url;
+  interactiveRef.current = !!interactive;
   const reopening = useRef(false);
 
   // セッションが切れていたら黙って開き直す（ユーザーにエラーを見せない）。成功で true。
@@ -179,6 +183,17 @@ export default function UrlStage(props) {
   }, [reopenSilently, scheduleRefresh]);
 
   const enqueue = useCallback((...events) => { queue.current.push(...events); pump(); }, [pump]);
+  enqueueRef.current = enqueue;
+
+  // ライブ画面に「非passive」の wheel リスナを付けて preventDefault を効かせる。
+  // React の onWheel だと passive 登録されスクロールを止められないため。
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el || !interactive) return undefined;
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => el.removeEventListener('wheel', handleWheel);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [interactive]);
 
   const onImgClick = (e) => {
     if (!interactive) return;
@@ -193,14 +208,29 @@ export default function UrlStage(props) {
     clickFxTimer.current = setTimeout(() => setClickFx(null), 500);
   };
 
-  const onWheel = (e) => {
-    if (!interactive) return;
+  // ホイールでサイトをスクロール。React の onWheel は passive 登録され
+  // preventDefault が効かず、スクロールがローカルページに奪われてしまうため、
+  // 非passive のネイティブリスナで拾って preventDefault する（下の useEffect）。
+  const handleWheel = (e) => {
+    if (!interactiveRef.current) return;
+    e.preventDefault(); // 手元のページを動かさず、サイト側だけをスクロール
     wheelAccum.current.dy += e.deltaY;
+    wheelAccum.current.dx += e.deltaX;
+    // カーソル位置（画像内→リモート座標）。その場所のスクロール領域を動かせる。
+    const img = imgRef.current;
+    if (img) {
+      const r = img.getBoundingClientRect();
+      if (r.width && r.height) {
+        wheelAccum.current.x = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * vpRef.current.w;
+        wheelAccum.current.y = Math.max(0, Math.min(1, (e.clientY - r.top) / r.height)) * vpRef.current.h;
+      }
+    }
     clearTimeout(wheelAccum.current.t);
     wheelAccum.current.t = setTimeout(() => {
-      const dy = wheelAccum.current.dy; wheelAccum.current.dy = 0;
-      enqueue({ t: 'scroll', dy });
-    }, 110);
+      const { dx, dy, x, y } = wheelAccum.current;
+      wheelAccum.current.dx = 0; wheelAccum.current.dy = 0;
+      enqueueRef.current({ t: 'scroll', dx, dy, x, y });
+    }, 90);
   };
 
   // --- キーボード／IME（隠しinput 経由） ---
@@ -343,8 +373,8 @@ export default function UrlStage(props) {
       )}
 
       <div className="url-body">
-        <div className={`sess-wrap${interactive ? ' live' : ''}${kbActive ? ' kb' : ''}`} tabIndex={0}
-          onWheel={onWheel} onPointerDown={focusKb}>
+        <div ref={wrapRef} className={`sess-wrap${interactive ? ' live' : ''}${kbActive ? ' kb' : ''}`} tabIndex={0}
+          onPointerDown={focusKb}>
           {loading ? <RenderingIndicator estimate={6} label="サイトを開いています" />
             : error ? <div className="stage-empty"><p style={{ color: 'var(--danger)' }}>{error}</p></div>
             : shot ? (
