@@ -41,9 +41,8 @@ export default function Controls(props) {
   const toggle = (k) => setCollapsed((c) => ({ ...c, [k]: !c[k] }));
   const set = (patch) => onChange(patch);
 
-  // 「写真の形に」はフレーム自体を変形するので slab枠（スマホ/タブレット）のみ有効。
-  // 写実枠・ブラウザ/モニター/ノートPC枠では効かないので選択肢から隠す。
-  const supportsFrameFit = !!frame && frame.kind !== 'asset' && (frame.spec?.draw || 'slab') === 'slab';
+  // 「写真の形に」はフレーム自体を変形するので slab枠（スマホ/タブレット）および browser枠で有効。
+  const supportsFrameFit = !!frame && frame.kind !== 'asset' && ((frame.spec?.draw || 'slab') === 'slab' || frame.spec?.draw === 'browser');
   const fitOpts = FITS.filter((f) => f.v !== 'frame' || supportsFrameFit);
   const fitCur = FITS.find((f) => f.v === settings.fit) || FITS[0];
   const fitLabel = fitCur.name;

@@ -68,3 +68,12 @@ test('calcNativeScale: MacBook 2560x1600 で約2.8倍のスケールを算出', 
   assert.ok(scale >= 2.7 && scale <= 3.0);
 });
 
+test('calcNativeScale: Browser 1920x1080 で1.5倍のスケールを算出', async () => {
+  const { calcNativeScale, getFrame } = await import('../lib/devices.js');
+  const frame = getFrame('browser');
+  const item = { device: 'browser', orientation: 'portrait', img: { width: 1920, height: 1080 } };
+  const scale = calcNativeScale(item, frame);
+  assert.equal(scale, 1.5);
+});
+
+
