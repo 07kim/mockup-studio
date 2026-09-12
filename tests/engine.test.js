@@ -51,3 +51,20 @@ test('fitRect stretch: source 全体を box 全体へ', () => {
   assert.deepEqual([r.sx, r.sy, r.sw, r.sh], [0, 0, 2000, 1000]);
   assert.deepEqual([r.dx, r.dy, r.dw, r.dh], [0, 0, 100, 100]);
 });
+
+test('calcNativeScale: iPhone 1179x2556 で約3倍のスケールを算出', async () => {
+  const { calcNativeScale, getFrame } = await import('../lib/devices.js');
+  const frame = getFrame('iphone-island');
+  const item = { device: 'iphone-island', orientation: 'portrait', img: { width: 1179, height: 2556 } };
+  const scale = calcNativeScale(item, frame);
+  assert.ok(scale >= 2.9 && scale <= 3.1);
+});
+
+test('calcNativeScale: MacBook 2560x1600 で約2.8倍のスケールを算出', async () => {
+  const { calcNativeScale, getFrame } = await import('../lib/devices.js');
+  const frame = getFrame('macbook');
+  const item = { device: 'macbook', orientation: 'portrait', img: { width: 2560, height: 1600 } };
+  const scale = calcNativeScale(item, frame);
+  assert.ok(scale >= 2.7 && scale <= 3.0);
+});
+

@@ -5,8 +5,7 @@ import ItemCanvas from './ItemCanvas.jsx';
 import RenderingIndicator from './RenderingIndicator.jsx';
 import BgControl from './BgControl.jsx';
 
-const PREVIEW_RS = 0.9;
-const PREVIEW_N = 14;
+const PREVIEW_N = 24;
 const clampDeg = (v) => Math.max(-60, Math.min(60, Math.round(v)));
 
 /** 中央フォーカスプレビュー（§4 / §7）。傾きモードではドラッグで自由に回転できる。 */
@@ -65,7 +64,7 @@ export default function Preview({ item, settings, bgImg, version, onAddImage, on
     <div className="stage-body">
       <div className={`checker${tilt ? ' tilt-on' : ''}`}
         onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={endDrag} onPointerLeave={endDrag} onDoubleClick={onDblClick}>
-        <ItemCanvas item={item} settings={settings} bgImg={bgImg} rs={PREVIEW_RS} N={PREVIEW_N} version={version} />
+        <ItemCanvas item={item} settings={settings} bgImg={bgImg} rs="auto" N={PREVIEW_N} version={version} />
       </div>
 
       {/* 左下: 背景（枠色は上部のデバイスツールバーへ） */}

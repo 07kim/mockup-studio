@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 import { renderItem } from '@/lib/engine.js';
 
 /** item を canvas に合成して表示する共通コンポーネント（プレビュー/グリッド兼用）。 */
-export default function ItemCanvas({ item, settings, bgImg, rs = 0.9, N = 14, version }) {
+export default function ItemCanvas({ item, settings, bgImg, rs = 'auto', N = 24, version }) {
   const holderRef = useRef(null);
   const rafRef = useRef(0);
 

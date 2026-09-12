@@ -46,7 +46,18 @@ export default function ExportDialog({ settings, setExport, totalCount, selCount
         </div>
 
         <div className="field"><label>解像度</label>
-          <div className="seg full">{[1, 2, 3].map((s) => <button key={s} className={settings.scale === s ? 'on' : ''} onClick={() => set({ scale: s })}>{s}x</button>)}</div>
+          <div className="seg full">
+            {['auto', 1, 2, 3, 4].map((s) => (
+              <button
+                key={s}
+                className={settings.scale === s ? 'on' : ''}
+                onClick={() => set({ scale: s })}
+                title={s === 'auto' ? '元画像の解像度を100%維持して最高画質で書き出します' : `${s}倍スケール`}
+              >
+                {s === 'auto' ? 'Auto (原寸)' : `${s}x`}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="field"><label>サイズを揃える（任意）</label>
